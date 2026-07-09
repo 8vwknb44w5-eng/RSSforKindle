@@ -520,8 +520,15 @@ class ContentProcessor:
                 else:
                     del tag['style']
 
-        # 2. 修复图片属性：width/height 必须是整数
+        # 2. 修复图片属性：width/height 必须是整数，且清理 alt/title 属性以防 Kindle Previewer 报错
         for img in soup.find_all('img'):
+            # 清理 alt 和 title 中的 <, >, &lt;, &gt;，防止 Kindle Previewer 转换失败 (E21018)
+            for attr in ('alt', 'title'):
+                if attr in img.attrs:
+                    val = img.get(attr, '')
+                    if isinstance(val, str):
+                        val_cleaned = val.replace('&gt;', ' - ').replace('&lt;', ' - ').replace('>', ' - ').replace('<', ' - ')
+                        img[attr] = val_cleaned
             # 处理 width 属性
             if 'width' in img.attrs:
                 width_value = img.get('width', '')

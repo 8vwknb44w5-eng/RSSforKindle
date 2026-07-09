@@ -23,6 +23,7 @@
 | HTML版本 | XHTML 1.1 | HTML5/XHTML 1.1 |
 | 文件目录 | 可选OEBPS/OPS | 推荐 `EPUB/` 目录 |
 | 验证工具 | EPUBCheck 2.0规则 | EPUBCheck 3.3规则（默认） |
+| 官方验证工具 | Amazon Kindle Previewer | Amazon Kindle Previewer |
 
 ### ebooklib的限制
 
@@ -359,6 +360,40 @@ book.guide = [
 
 ---
 
+### 错误8: Kindle Previewer 转换失败 - <img> 属性包含 `<` / `>` / `&lt;` / `&gt;`
+
+**错误信息**：
+```
+"Error","E21018: Enhanced Mobi building failure, while parsing content in the file. Content: <img> in file: .../chapter_x.xhtml line: y"
+```
+
+**问题描述**：
+使用 Kindle Previewer 命令行工具进行电子书格式转换（`-convert`）时，某些章节会出现 `E21018` 解析错误，导致生成 Mobi/KPF 失败，但 EPUBCheck 却校验通过（无任何警告或错误）。
+
+**根本原因**：
+Kindle Previewer 内部的 HTML/XML 解析器存在严重缺陷。在解析 `<img>` 标签时，如果 `alt` 或 `title` 等属性中含有小于号 `<`、大于号 `>` 或其对应的转义实体 `&lt;`、`&gt;`，会被其预处理器误识别并截断（例如在预处理过程中将 `&gt;` 解密为 `>`，接着使用不健全的正则进行抓取），从而导致 `<img>` 标签的闭合被破坏，被误认作是一个未闭合的非法 `<img>` 标签。
+
+**错误示例**：
+```html
+<!-- ❌ alt 属性包含 HTML 实体，会导致 Kindle 预处理断开报错 -->
+<img src="images/image_1.jpg" alt="Security &gt; Settings" />
+```
+
+**解决方案**：
+在生成 EPUB 时的内容处理（Content Processor）阶段，针对所有 `<img>` 标签的 `alt` 和 `title` 属性，自动剔除或替换 `<`, `>`, `&lt;`, `&gt;` 特殊字符。
+```python
+# ✅ 清理 alt 和 title 中的特殊字符
+for img in soup.find_all('img'):
+    for attr in ('alt', 'title'):
+        if attr in img.attrs:
+            val = img.get(attr, '')
+            if isinstance(val, str):
+                val_cleaned = val.replace('&gt;', ' - ').replace('&lt;', ' - ').replace('>', ' - ').replace('<', ' - ')
+                img[attr] = val_cleaned
+```
+
+---
+
 ## Kindle落点问题 - 打开时随机进入正文而非目录
 
 **现象**：EPUB 发送到 Kindle 后，打开时有时落在目录页（nav.xhtml），有时直接跳入第一篇正文，行为不稳定。
@@ -523,6 +558,34 @@ EPUBCheck completed
 | HTM-010 | HTML属性值无效（小数点等） | Error | chapter_x.xhtml |
 
 **注意**：同一个错误代码可能对应多个不同的问题，如 RSC-005 既可能表示缺少nav属性，也可能表示HTML嵌套错误。
+
+### Kindle Previewer
+
+**官方工具**：Amazon Kindle Previewer 是一款可以模拟 Kindle 设备和阅读软件上书籍排版展示的官方工具。它同样包含命令行界面，可用于自动化验证 EPUB 文件转换为 Kindle 专有格式（Mobi/KF8/KPF）的正确性。
+
+#### 使用方法
+
+```bash
+# 将 EPUB 转换为 Kindle 格式以验证文件正确性
+kindlepreviewer "/path/to/book.epub" -convert
+```
+
+#### 验证结果解读
+
+如果转换成功，控制台将输出以下类似内容，并在指定的输出目录生成对应的 KPF 电子书和转换 Logs：
+```
+Pre-processing in progress.
+Processing 1/1 book(s).
+Book converted successfully! : /path/to/book.epub
+Post-processing in progress.
+```
+
+如果转换失败，则会提示转换失败并在输出的 Logs 目录中生成对应的错误详情 CSV 报告（如 E21018）：
+```
+Pre-processing in progress.
+Processing 1/1 book(s).
+Book Conversion failed. /path/to/book.epub
+```
 
 ---
 
@@ -698,6 +761,7 @@ cat report.json
 - [EPUBCheck官方文档](https://github.com/w3c/epubcheck) - 验证工具文档
 - [ebooklib GitHub](https://github.com/aerkalov/ebooklib) - Python库源码
 - [EPUB最佳实践](https://github.com/IDPF/epub3-samples) - 官方示例文件
+- [Kindle-Previewer下载](https://www.amazon.com/Kindle-Previewer/b?node=21381691011) - 官方验证工具
 
 ---
 
@@ -715,6 +779,7 @@ cat report.json
 8. ✅ **修复嵌套结构** - `<p>` 内不能有块级元素
 9. ✅ **验证EPUB文件** - 使用EPUBCheck确保合规
 10. ✅ **Kindle落点控制** - OPF guide 加 `type="start"` + nav.xhtml 加 `epub:type="landmarks"` 块，确保打开时总是进入目录
+11. ✅ **清理图片描述中的特殊字符** - 清理 `alt` / `title` 属性中的 `<` / `>` 防止 Kindle Previewer 报错 (E21018)
 
 ### 验证成功的标志
 
