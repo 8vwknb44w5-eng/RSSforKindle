@@ -790,3 +790,18 @@ class TestUrlNormalization:
         assert '<a' not in result.content
         assert 'Click Here or FTP' in result.content
 
+
+class TestImgAltTitleCleaning:
+    """测试 content_processor 对于 img 标签 alt 和 title 属性中的特殊字符清洗行为"""
+
+    def test_img_alt_title_cleaning(self):
+        """测试 img 标签中的 <, >, &lt;, &gt; 应该被替换为 -"""
+        source = ContentSource(type="web", src="https://example.com")
+        processor = ContentProcessor(source)
+        html = '<p><img src="test.jpg" alt="A &gt; B &lt; C > D < E" title="X &gt; Y"/></p>'
+        article = _make_article(html)
+        result = processor.process(article)
+        # attrs should be cleaned and output correctly
+        assert 'alt="A  -  B  -  C  -  D  -  E"' in result.content
+        assert 'title="X  -  Y"' in result.content
+
