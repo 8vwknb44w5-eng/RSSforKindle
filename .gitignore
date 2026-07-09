@@ -54,3 +54,5 @@ htmlcov/
 epubcheck/
 
 temp_epub/
+
+output/
