@@ -492,6 +492,130 @@ unzip -p your_epub.epub EPUB/content.opf | grep 'type="start"'
 <reference href="nav.xhtml" title="Start" type="start"/>
 ```
 
+## Kindle推送失败与内容错误排查
+
+> 本部分内容总结自 [书伴文章：推送 EPUB 文件到 Kindle 的常见失败原因及解决方法](https://bookfere.com/post/992.html)
+
+通过 Send to Kindle 推送 EPUB 到 Kindle 时，可能遇到两类问题：**推送失败**（收到亚马逊退信）和**内容出错**（推送成功但阅读体验异常）。以下逐一列出常见原因及解决方案。
+
+---
+
+### 一、导致推送失败的问题
+
+推送失败时，通常会收到亚马逊标题为"您发送到 Kindle 的文档有问题"的退信。一个 EPUB 文件可能同时存在多个问题，需逐一排查。
+
+#### 1. EPUB 中的某些文件不符合规范
+
+亚马逊个人文档服务对 EPUB 的容错机制较强，但对 **toc.ncx**（EPUB 2.0 导航）和 **nav.xhtml**（EPUB 3.0 导航）两个文件比较敏感，如果它们存在错误，大概率会导致推送失败。
+
+**解决方案**：
+- 使用 Sigil 打开 EPUB 文件，点击菜单【工具（Tools）→ 目录（Table Of Contents）→ 生成目录…（Generate Table Of Contents…）】（快捷键：Windows `Ctrl+T` / macOS `Command+T`）重新生成目录。
+- 注意：此方式可能会破坏目录层级，生成后需检查调整。
+- 也可使用 [Sigil + EpubCheck 插件](https://bookfere.com/post/1004.html) 检测并修复 `content.opf` 和 `toc.ncx` 的所有问题。
+
+#### 2. XHTML 文件名含空格和中文字符
+
+如果 EPUB 中插入了广告页面，且文件名带有空格或中文字符，会导致推送失败。
+
+**解决方案**：
+- 用 Sigil 打开 EPUB，直接删除带空格和中文字符的 XHTML 页面并保存。
+
+#### 3. OPF 文件中的 language 元素有误
+
+`<dc:language>` 元素缺失、内容为空或指定了错误的语言代码（如 `und`）都会导致推送失败。
+
+**解决方案**：
+- 用 Sigil 打开 OPF 文件（通常为 `content.opf`），在 `<metadata>` 中添加或修改 `<dc:language>` 元素：
+  ```xml
+  <dc:language>zh</dc:language>
+  ```
+- 也可通过 Sigil 菜单【工具（Tools）→ 元数据编辑器…（Metadata Editor…）】添加"语言"元数据，选择"中文 – 中国（Chinese – China）"。
+- 语言代码参考 [ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) 列表。
+
+#### 4. OPF 文件中出现重复的 item 元素
+
+OPF 文件的 `<manifest>` 中如果出现重复的 `<item>` 元素（相同 id 或 href），会导致推送失败。
+
+**解决方案**：
+- 使用 [KindleGen](https://bookfere.com/post/92.html) 转换有问题的 EPUB，它会提示具体哪个 item 重复，例如：
+  ```
+  Error(xmlmake):E27012: Item or process id already used: 180630.jpg
+  ```
+- 手动删除重复的 `<item>` 元素。
+
+#### 5. 在 CSS 中隐藏的字符数超过了限制
+
+Kindle 对 CSS 的 `display:none;` 声明有限制：隐藏内容区块中的字符**不能超过 10000 个**，否则会导致推送失败。
+
+**解决方案**：
+- 删除 CSS 文件中所有 `display:none;` 声明。
+
+#### 6. XHTML 中的元素含有不兼容属性
+
+某些属性（如 `data-amznremoved`）会导致亚马逊服务器处理失败。
+
+**解决方案**：
+- 检查并移除 XHTML 中所有类似 `data-amznremoved` 的不兼容属性。
+
+#### 7. XHTML 文件中的 body 标签含 ID
+
+在 `toc.ncx` 中，如果 `<content>` 元素的 `src` 属性指向的 XHTML 路径包含 URL 片段（如 `text/part0001.html#test_1`），且对应的 `id` 在 `<body>` 元素上，可能导致推送失败。
+
+**解决方案**：
+- 将 `<body>` 上的 `id` 移至其子元素上。
+- 或直接删除路径中的片段部分（`#` 及其后字符）。
+
+#### 8. NCX 文件中包含的导航目录条目过多
+
+如果 `toc.ncx` 中的 `<navPoint>` 条目**超过 1321 条**，大概率会推送失败。这是亚马逊服务器端的限制。
+
+**解决方案**（变通方案）：
+- **删减目录层级**：编辑 NCX 文件，减少 `<navPoint>` 元素数量。缺点：影响 Kindle 目录导航功能。
+- **分割电子书**：将 EPUB 文件[分割成多份](https://bookfere.com/post/603.html)。缺点：增加工作量。
+
+---
+
+### 二、导致内容出错的问题
+
+推送成功但阅读体验异常时，可按以下问题排查。
+
+#### 1. 电子书内容出现乱码
+
+中文电子书全部乱码，或英文电子书部分标点符号乱码。通常是因为 XHTML 文件**没有指定 UTF-8 编码**。
+
+**解决方案**：
+- 用 Sigil 打开 EPUB，点击菜单【工具（Tools）→ HTML 重新格式化（Reformat HTML）→ 改进所有 HTML 文件（Mend All HTML Files）】，让 Sigil 自动修补所有 HTML 文件，保存后重新推送。
+
+#### 2. 电子书目录层级有误
+
+目录层级与预期不符。
+
+**解决方案**：
+- 用 Sigil 的目录编辑功能【工具（Tools）→ 目录（Table Of Contents）→ 编辑目录…（Edit Table Of Contents…）】调整：
+  - 上下方向键选中标题
+  - `Ctrl` + 上下方向键调整顺序
+  - 左右方向键调整缩进（层级）
+
+#### 3. 电子书导航目录缺失
+
+推送后 Kindle 的"前往"功能无法进行目录导航。常见原因：
+- `toc.ncx` 中的 URI 包含片段（如 `text/part0001.html#UGI0-1af7590487e04e47b91ab6bb431b89f3`），亚马逊服务器在转换时丢失了导航目录。
+- EPUB 3.0 文件不包含 `.ncx` 文件，亚马逊服务器可能不支持这种导航格式。
+
+**解决方案**：
+- **删除 URI 片段**：用 Sigil 打开 `toc.ncx`，使用正则表达式 `#[^"]*` 查找，替换为空，全部替换后保存。
+- **重新生成目录**：点击菜单【工具（Tools）→ 目录（Table Of Contents）→ 生成目录…（Generate Table Of Contents…）】。
+- **格式转换**：用 Calibre 先将 EPUB 转成 AZW3，再转回 EPUB，有时可解决。
+- **降级为 EPUB 2.0**：如果 EPUB 3.0 缺少 NCX 文件，用 Calibre 转换成 EPUB 2.0 再推送。
+
+#### 4. 电子书字体显示异常
+
+推送到 Kindle 后字体不一致（黑体宋体掺杂），通常是因为电子书的**实际语言与元数据中的语言不一致**。
+
+**解决方案**：
+- 用 Sigil 或 Calibre 的元数据编辑功能，将语言修改为与实际文本一致（参考上文"OPF 文件中的 language 元素有误"）。
+
+
 ---
 
 ## 验证工具
