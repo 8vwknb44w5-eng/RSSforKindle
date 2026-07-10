@@ -231,9 +231,14 @@ class EPUBGenerator:
                 # 生成章节内容
                 chapter_content = self._generate_chapter_content(article, chapter_id)
                 
-                # 收集 Emoji 并替换为图片标签
+                # 收集 Emoji 并替换为图片标签 (content)
                 unique_emojis.update(ContentProcessor.get_unique_emojis(chapter_content))
                 chapter_content = ContentProcessor.replace_emojis_with_images(chapter_content)
+
+                # 收集 Emoji 并替换为图片标签 (title)
+                title_content = ContentProcessor.wrap_emojis(article.title)
+                unique_emojis.update(ContentProcessor.get_unique_emojis(title_content))
+                article.title = ContentProcessor.replace_emojis_with_images(title_content)
 
                 # 创建章节
                 chapter = epub.EpubHtml(
