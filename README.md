@@ -47,12 +47,11 @@ Ought Gather 是一个 Python 自动化信息聚合工具。它从 RSS、网页�
 
 在 GitHub 页面点击 `Fork`，把项目复制到自己的账号下。
 
-
-**3. 配置内容及环境变量**
+**2. 配置内容及环境变量**
 
 见下方 [Secrets 配置](#secrets-配置) 一节。
 
-**4. 手动触发一次**
+**3. 手动触发一次**
 
 ```text
 Actions -> Daily Gather -> Run workflow
@@ -387,7 +386,7 @@ class MyFetcher(BaseFetcher):
 ```
 </details>
 
-### 新增 fetcher 后，运行 `python3.11 scripts/update_editor.py` 同步到 `config-editor.html`。
+### 新增fetcher后同步文档和脚本
 
 **方式一**：Actions自动同步
 
@@ -412,6 +411,7 @@ python3.11 scripts/update_workflow_secrets.py
 .
 ├── LICENSE
 ├── README.md
+├──  cloudflare- worker/ # worker部署触发器
 ├── config-editor.html
 ├── config.json
 ├── config.template.json
