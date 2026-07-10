@@ -146,10 +146,22 @@ jobs:
           path: output/*.epub
           retention-days: 7
 
+      - name: Upload dedup records
+        # 上传去重数据文件（data/fetched_urls.txt），便于排查去重命中情况、手动比对历史
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dedup-records
+          path: data/fetched_urls.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Upload logs
-        if: failure()
+        # 无论成功或失败都上传运行日志（含去重检查 / 标记 / 保存等条目），便于下载排查
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: logs
           path: logs/*.log
+          if-no-files-found: ignore
           retention-days: 7
