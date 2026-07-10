@@ -163,12 +163,14 @@ class BaseFetcher(ABC):
             error=f"Failed after {self.max_retries} attempts: {last_error}"
         )
 
+    DEFAULT_TIMEOUT = 20
+
     def _make_request(
         self,
         url: str,
         method: str = "GET",
         headers: Optional[Dict[str, str]] = None,
-        timeout: int = 30
+        timeout: int = DEFAULT_TIMEOUT
     ) -> httpx.Response:
         """
         发送 HTTP 请求
@@ -183,7 +185,7 @@ class BaseFetcher(ABC):
             httpx.Response: 响应对象
         """
         default_headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/120.0.0.0"
         }
 
         if headers:
@@ -194,6 +196,7 @@ class BaseFetcher(ABC):
             response.raise_for_status()
             response.read()  # 确保在客户端关闭前读取响应体
             return response
+
 
     def _resolve_url(self, url: str, base_url: Optional[str] = None) -> str:
         """
