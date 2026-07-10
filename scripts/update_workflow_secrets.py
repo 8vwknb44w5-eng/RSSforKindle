@@ -34,15 +34,25 @@ def update_workflow(secrets):
         content = f.read()
     
     # 构造新的 env 块
+    # 从现有 workflow 中提取时区设置（保留，不自动更新）
+    tz_match = re.search(r'^(\s*)(TZ:\s*\S+)', content, re.MULTILINE)
+    existing_tz = tz_match.group(2) if tz_match else "TZ: Asia/Shanghai"
+
     new_env = "        env:\n"
-    new_env += "          # 时区设置：使用北京时间 UTC+8\n"
-    new_env += "          TZ: Asia/Shanghai\n\n"
+    new_env += "          # 时区设置\n"
+    new_env += f"          {existing_tz}\n\n"
     new_env += "          # SMTP 配置（必需）\n"
     new_env += "          SMTP_HOST: ${{ secrets.SMTP_HOST }}\n"
     new_env += "          SMTP_PORT: ${{ secrets.SMTP_PORT }}\n"
     new_env += "          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}\n"
     new_env += "          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}\n"
     new_env += "          KINDLE_EMAIL: ${{ secrets.KINDLE_EMAIL }}\n\n"
+    new_env += "          # WebDAV 配置\n"
+    new_env += "          WEBDAV_ENABLED: ${{ secrets.WEBDAV_ENABLED }}\n"
+    new_env += "          WEBDAV_PASSWORD: ${{ secrets.WEBDAV_PASSWORD }}\n"
+    new_env += "          WEBDAV_REMOTE_PATH: ${{ secrets.WEBDAV_REMOTE_PATH }}\n"
+    new_env += "          WEBDAV_URL: ${{ secrets.WEBDAV_URL }}\n"
+    new_env += "          WEBDAV_USERNAME: ${{ secrets.WEBDAV_USERNAME }}\n\n"
     new_env += "          # 自动注入 Secrets\n"
     
     # Sort keys

@@ -66,7 +66,7 @@ jobs:
 
       - name: Run Ought Gather
         env:
-          # 时区设置：使用北京时间 UTC+8
+          # 时区设置
           TZ: Asia/Shanghai
 
           # SMTP 配置（必需）
@@ -75,6 +75,13 @@ jobs:
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           KINDLE_EMAIL: ${{ secrets.KINDLE_EMAIL }}
+
+          # WebDAV 配置
+          WEBDAV_ENABLED: ${{ secrets.WEBDAV_ENABLED }}
+          WEBDAV_PASSWORD: ${{ secrets.WEBDAV_PASSWORD }}
+          WEBDAV_REMOTE_PATH: ${{ secrets.WEBDAV_REMOTE_PATH }}
+          WEBDAV_URL: ${{ secrets.WEBDAV_URL }}
+          WEBDAV_USERNAME: ${{ secrets.WEBDAV_USERNAME }}
 
           # 自动注入 Secrets
           OPENROUTER_API_ENDPOINT: ${{ secrets.OPENROUTER_API_ENDPOINT }}
