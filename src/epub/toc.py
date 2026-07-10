@@ -35,8 +35,7 @@ class TOCGenerator:
 
         Returns:
             List[TOCEntry]: 目录结构
-            - mail/rss: (Link, [Link, ...]) 两级结构
-            - web/trending: epub.Link 扁平结构
+            - 所有 fetcher 均使用两级结构 (Section, [Link, ...])
         """
         toc: List[TOCEntry] = []
         chapter_counter = 0
@@ -47,19 +46,8 @@ class TOCGenerator:
                 continue
 
             section_title = self._get_source_title(source, articles, source_title)
-            
-            # web/trending：无小标题，直接生成扁平链接
-            if source.type in ("web", "trending"):
-                chapter_filename = f"chapter_{chapter_counter}.xhtml"
-                chapter_id = f"chapter_{chapter_counter}"
 
-                link = epub.Link(chapter_filename, section_title, chapter_id)
-                toc.append(link)
-                chapter_counter += 1
-                divider_counter += 1 # 对应 generator.py 中的 divider_id
-                continue
-
-            # mail/rss：两级结构（章节 → 文章列表）
+            # 两级结构（章节 → 文章列表）
             section_uid = f"section_{divider_counter}"
             section_href = f"divider_{divider_counter}.xhtml"
             section_link = epub.Link(section_href, section_title, section_uid)
@@ -118,5 +106,5 @@ class TOCGenerator:
                 return articles[0].title
             return source.src
 
-        # mail / trending：直接使用 source.src（namespace / 关键词）
+        # mail / trending / weather / raindropio：直接使用 source.src
         return source.src

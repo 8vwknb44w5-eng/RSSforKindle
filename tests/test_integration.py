@@ -560,9 +560,9 @@ class TestSectionDividers:
 
             # Web 分隔页为第二个：divider_1.xhtml
             divider_web_html = self._read_epub_xhtml(epub_path, "divider_1.xhtml")
-            # 应该链接到第3个章节 (前面有2个rss章节，所以是 chapter_2)
-            assert 'href="contents.xhtml#toc_chapter_2"' in divider_web_html, "Web分隔页链接错误"
-            assert 'id="toc_chapter_2"' in toc_html, "contents.xhtml中应该有id='toc_chapter_2'"
+            # 所有 fetcher 均使用两级结构，应该链接到 toc_section_1
+            assert 'href="contents.xhtml#toc_section_1"' in divider_web_html, "Web分隔页链接错误"
+            assert 'id="toc_section_1"' in toc_html, "contents.xhtml中应该有id='toc_section_1'"
 
             print(f"✓ 分隔页返回目录的链接完全匹配 contents.xhtml 中的 ID")
         finally:

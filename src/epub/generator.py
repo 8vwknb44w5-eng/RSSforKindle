@@ -204,13 +204,8 @@ class EPUBGenerator:
             section_title = self.toc_generator._get_source_title(
                 source, articles, source_title
             )
-            # 确定返回目录时应该锚定到目录 (nav.xhtml) 中的哪一个条目：
-            # - web / trending: 对应扁平链接，锚定到 toc_chapter_{chapter_id}
-            # - mail / rss: 对应两级结构，锚定到 toc_section_{divider_id}
-            if source.type in ("web", "trending"):
-                target_toc_id = f"toc_chapter_{chapter_id}"
-            else:
-                target_toc_id = f"toc_section_{divider_id}"
+            # 所有 fetcher 均使用两级结构，锚定到 toc_section_{divider_id}
+            target_toc_id = f"toc_section_{divider_id}"
 
             # 构造栏目下所有文章的信息，用于在分隔页展示子目录
             articles_info = []
@@ -668,7 +663,7 @@ class EPUBGenerator:
         <div class="stat-item"><span class="stat-label">成功抓取：</span>新增 <span class="tag-success">{success_sources}</span> 个</div>
         <div class="stat-item"><span class="stat-label">抓取失败：</span><span class="tag-failed">{failed_sources}</span> 个</div>
     </div>
-    
+
     <div class="card">
         <div class="card-title"><span class="emoji">⚠️</span> 异常与错误记录</div>
         {error_log_content}
@@ -763,7 +758,7 @@ class EPUBGenerator:
 """
         for item in toc:
             if isinstance(item, epub_lib.Link):
-                # 扁平链接（如 web/trending 或 summary），使用大章节样式
+                # 扁平链接（如 summary），使用大章节样式
                 content += (
                     f'            <li id="toc_{item.uid}" style="{STYLE_LI}">'
                     f'<a class="section-link" href="{item.href}" style="{STYLE_SECTION_LINK}">'
