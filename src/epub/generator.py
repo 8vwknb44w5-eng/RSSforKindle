@@ -664,11 +664,16 @@ class EPUBGenerator:
         <div class="stat-item"><span class="stat-label">推送时间：</span>{push_time}</div>
         <div class="stat-item"><span class="stat-label">运行耗时：</span>{runtime_str}</div>
         <div class="stat-item"><span class="stat-label">数据源总数：</span>{total_sources} 个</div>
-        <div class="stat-item"><span class="stat-label">成功抓取：</span><span class="tag-success">成功</span>，新增 <span class="tag-success">{success_sources}</span> 个</div>
-        <div class="stat-item"><span class="stat-label">抓取失败：</span><span class="tag-failed">失败</span>，<span class="tag-failed">{failed_sources}</span> 个</div>
         <div class="stat-item"><span class="stat-label">新增文章：</span><span class="tag-success">{total_articles}</span> 篇</div>
+        <div class="stat-item"><span class="stat-label">成功抓取：</span>新增 <span class="tag-success">{success_sources}</span> 个</div>
+        <div class="stat-item"><span class="stat-label">抓取失败：</span><span class="tag-failed">{failed_sources}</span> 个</div>
     </div>
-
+    
+    <div class="card">
+        <div class="card-title"><span class="emoji">⚠️</span> 异常与错误记录</div>
+        {error_log_content}
+    </div>
+    
     <div class="card">
         <div class="card-title"><span class="emoji">🔌</span> 订阅源详情</div>
         <ul class="source-list">
@@ -676,10 +681,6 @@ class EPUBGenerator:
         </ul>
     </div>
 
-    <div class="card">
-        <div class="card-title"><span class="emoji">⚠️</span> 异常与错误记录</div>
-        {error_log_content}
-    </div>
 
 </body>
 </html>"""
