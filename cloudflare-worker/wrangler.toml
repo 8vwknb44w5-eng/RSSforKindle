@@ -3,4 +3,4 @@ main = "index.js"
 compatibility_date = "2024-01-01"
 
 [triggers]
-crons = ["30 23 * * *"] # 每天 UTC 23:30 (北京时间早上 7:30) 触发
+crons = ["30 7 * * *"] # 每天 定时 触发
