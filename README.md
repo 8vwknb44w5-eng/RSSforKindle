@@ -113,7 +113,14 @@ on:
 
 > **注意**：工作流里的 `TZ: Asia/Shanghai` 只影响程序内部的日期和日志，不影响 cron 触发时间。实际触发时间以 GitHub Actions 运行记录为准，可能与 cron 语义有偏差。
 
+### 去重缓存机制（无需开启写入权限）
+
+由于项目引入了 `actions/cache` 机制，去重数据 `data/fetched_urls.txt` 会自动加密保存在 GitHub 的缓存服务器中。
+
 ### 排查失败
+
+<details>
+<summary><b>排查发送失败</b></summary>
 
 | 现象 | 常见原因 |
 | --- | --- |
@@ -122,10 +129,7 @@ on:
 | 邮件发出但 Kindle 未收到 | 发件邮箱未加入 Kindle 认可发件人列表 |
 | `Send to Kindle` 网页端显示失败 | EPUB生成兼容性问题，请提交反馈报告问题 |
 | 没有生成 EPUB | 内容源无新文章 |
-
-### 去重缓存机制（无需开启写入权限）
-
-由于项目引入了 `actions/cache` 机制，去重数据 `data/fetched_urls.txt` 会自动加密保存在 GitHub 的缓存服务器中。
+</details>
 
 ---
 
@@ -169,7 +173,10 @@ on:
 ---
 ## config.json 说明
 
-完整字段说明见 [docs/CONFIG.md](docs/CONFIG.md)，以下是核心结构速览。
+完整字段说明见 [docs/CONFIG.md](docs/CONFIG.md)
+
+<details>
+<summary>以下是核心结构速览</summary>
 
 ### 顶层字段
 
@@ -220,6 +227,7 @@ on:
   ]
 }
 ```
+</details>
 
 ---
 
@@ -235,7 +243,8 @@ https://liusonwood.github.io/oughtgather/
 
 **离线版**：下载并打开仓库里的 `config-editor.html`。
 
-### 主要功能
+<details>
+<summary><b>主要功能</b></summary>
 
 - 支持全部内容源类型（`rss` / `web` / `mail` / `trending` 及自定义插件），提醒每一类内容源所需配置的环境变量
 - 导入已有 `config.json`，可视化添加 / 删除 / 拖拽排序内容源
@@ -243,15 +252,15 @@ https://liusonwood.github.io/oughtgather/
 - 编辑排除规则（`exclude`）和扩展参数（`metadata`）
 - 通过下载或复制到剪贴板导出最终 JSON
 - 所有改动自动保存到 `localStorage`，刷新不丢失
-
-### 抓取器参数同步
-
-在 `src/fetchers/` 新增自定义抓取器后，编辑器需要同步更新才能显示新插件的参数字段：
+</details>
 
 ---
 
 
 ## 本地开发部署
+
+<details>
+<summary><b>展开：</b></summary>
 
 ### 1. 安装依赖
 
@@ -303,6 +312,7 @@ python3.11 -m pytest tests/test_integration.py::TestEpubcheckValidation -v
 ```
 
 更多说明见 [docs/TESTING.md](docs/TESTING.md) 和 [docs/EPUB_COMPLIANCE.md](docs/EPUB_COMPLIANCE.md)。
+</details>
 
 ---
 
@@ -319,7 +329,9 @@ python3.11 -m pytest tests/test_integration.py::TestEpubcheckValidation -v
 - 文件命名：`src/fetchers/<type_name>_fetcher.py`
 - 注册是自动的，模块加载时即完成注册
 
-### 使用 LLM 快速生成
+</br>
+<details>
+<summary><b>使用 LLM 快速生成</b></summary>
 
 [docs/new_fetcher_prompt_template.md](docs/new_fetcher_prompt_template.md) 提供了一个可复制给任意 LLM 的开发提示词模板，填入你的需求后即可自动生成符合架构规范的 fetcher 代码。使用前回答模板开头的 5 个问题：
 
@@ -328,8 +340,10 @@ python3.11 -m pytest tests/test_integration.py::TestEpubcheckValidation -v
 3. 是否需要 API Key 等凭据？
 4. 如何解析文章内容？（HTML 标签、JSON 字段位置等）
 5. 是否有特殊处理需求？（内容过滤、重试策略等）
+</details>
 
-### 关键父类方法
+<details>
+<summary><b>关键父类方法</b></summary>
 
 | 方法 | 说明 |
 | --- | --- |
@@ -337,8 +351,10 @@ python3.11 -m pytest tests/test_integration.py::TestEpubcheckValidation -v
 | `self._extract_images(html)` | 从 HTML 提取图片 URL 列表 |
 | `self._should_delete(title)` | 检查标题是否匹配 `delete` 关键词 |
 | `self._restore_img_tags(html)` | 修复 trafilatura 输出的非标准图片标签 |
+</details>
 
-### 代码框架
+<details>
+<summary><b>代码框架</b></summary>
 
 ```python
 from src.config import ContentSource, get_secret
@@ -369,6 +385,7 @@ class MyFetcher(BaseFetcher):
             result.error = str(e)
         return result
 ```
+</details>
 
 ### 新增 fetcher 后，运行 `python3.11 scripts/update_editor.py` 同步到 `config-editor.html`。
 
@@ -378,11 +395,12 @@ class MyFetcher(BaseFetcher):
 
 **方式二**：手动触发同步
 
+运行 `scripts/` 目录下的文件
+
 ```bash
 python3.11 scripts/update_editor.py
 python3.11 scripts/update_readme_secrets.py
 python3.11 scripts/update_workflow_secrets.py
-
 ```
 
 ---
