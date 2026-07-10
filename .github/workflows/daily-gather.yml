@@ -4,9 +4,51 @@ on:
   schedule:
     - cron: '37 7 * * *'
   workflow_dispatch:  # 支持手动触发
+  repository_dispatch:  # 支持 Cloudflare Workers 等外部触发
+    types: [cf_trigger]
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Check 12h cooldown for scheduled run
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Fetch the last repository_dispatch run
+          LAST_RUN=$(gh run list --repo ${{ github.repository }} --workflow "${{ github.workflow }}" --event repository_dispatch --json createdAt --limit 1 --jq '.[0].createdAt' 2>/dev/null || echo "")
+          
+          SHOULD_RUN=$(LAST_RUN="$LAST_RUN" python3 -c "
+          import os, sys, datetime
+          last_run_str = os.environ.get('LAST_RUN', '')
+          if not last_run_str or last_run_str == 'null' or not last_run_str.strip():
+              print('true')
+              sys.exit(0)
+          try:
+              if last_run_str.endswith('Z'):
+                  last_run_str = last_run_str[:-1] + '+00:00'
+              last_run = datetime.datetime.fromisoformat(last_run_str)
+              now = datetime.datetime.now(datetime.timezone.utc)
+              if now - last_run < datetime.timedelta(hours=12):
+                  print('false')
+              else:
+                  print('true')
+          except Exception:
+              print('true')
+          ")
+          echo "should_run=$SHOULD_RUN" >> $GITHUB_OUTPUT
+
   gather:
+    needs: check
+    if: needs.check.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
