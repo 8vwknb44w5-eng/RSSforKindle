@@ -4,8 +4,13 @@ export default {
     ctx.waitUntil(triggerGitHubActions(env));
   },
 
-  // HTTP 访问手动触发，方便调试
+  // HTTP 访问手动触发，方便调试（仅响应 GET /）
   async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    // 忽略 favicon 等非根路径请求，防止浏览器访问触发两次
+    if (request.method !== "GET" || url.pathname !== "/") {
+      return new Response("Not Found", { status: 404 });
+    }
     try {
       await triggerGitHubActions(env);
       return new Response("GitHub Actions trigger sent successfully!", { status: 200 });
