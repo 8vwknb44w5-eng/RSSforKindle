@@ -40,7 +40,7 @@ async function triggerGitHubActions(env) {
       "X-GitHub-Api-Version": "2022-11-28"
     },
     body: JSON.stringify({
-      event_type: "cf_trigger"
+      event_type: "Daily Gather-cf_triggerd"
     })
   });
 
