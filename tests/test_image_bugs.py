@@ -235,3 +235,30 @@ class TestImageBugs:
                 assert "https://cdn.example.com/photo.webp" in content
                 soup = BeautifulSoup(content, 'lxml')
                 assert len(soup.find_all('img')) == 1
+
+    def test_emoji_images_not_decomposed(self):
+        """Test that local emoji images are not decomposed/removed during image sanitization."""
+        config_data = {
+            "title": {"text": "Test", "img": ""},
+            "body": [{"type": "web", "src": "https://example.com", "title": "Test"}]
+        }
+        config = _parse_config(config_data)
+        generator = EPUBGenerator(config)
+
+        html_content = '<p>Hello <img class="emoji" src="images/emoji_1f34c.png" alt="🍌"> World</p>'
+        article = Article(
+            title="Test Emoji",
+            content=html_content,
+            url="https://example.com"
+        )
+
+        chapter = epub.EpubHtml(title="Test Emoji", file_name="test.xhtml")
+        chapter.content = html_content
+        book = epub.EpubBook()
+
+        # Call _add_images_to_chapter
+        generator._add_images_to_chapter(book, chapter, article)
+
+        # The emoji img tag should still exist
+        assert "images/emoji_1f34c.png" in chapter.content
+        assert 'class="emoji"' in chapter.content

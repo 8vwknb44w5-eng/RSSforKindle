@@ -260,6 +260,8 @@ class EPUBGenerator:
                 continue
             soup = BeautifulSoup(chapter.content, 'lxml')
             for img in soup.find_all('img'):
+                if img.get('class') and 'emoji' in img.get('class'):
+                    continue
                 src, _ = self._extract_image_src(img)
                 if src and not src.startswith('data:'):
                     if src not in unique_images:
@@ -301,6 +303,8 @@ class EPUBGenerator:
             url_to_filename = {}
 
             for img in img_tags:
+                if img.get('class') and 'emoji' in img.get('class'):
+                    continue
                 src, remote_attrs = self._extract_image_src(img)
                 
                 # 彻底移除所有干扰属性，防止残留远程链接
@@ -471,6 +475,8 @@ class EPUBGenerator:
         url_to_filename = {}
 
         for img in img_tags:
+            if img.get('class') and 'emoji' in img.get('class'):
+                continue
             src, remote_attrs = self._extract_image_src(img)
             
             # 彻底移除所有干扰属性，防止残留远程链接
