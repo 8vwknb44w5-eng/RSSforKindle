@@ -44,7 +44,7 @@ class RSSFetcher(BaseFetcher):
 
         try:
             # 解析 RSS/Atom feed
-            feed = feedparser.parse(self.source.src, timeout=20)
+            feed = feedparser.parse(self.source.src)
 
             # 检查解析结果
             # 改进：即使有格式错误，只要有条目就继续处理
