@@ -20,13 +20,38 @@ class TrendingFetcher(BaseFetcher):
 
     type_name = "trending"
     src_placeholder = "关键词, 例如: 人工智能最新发展趋势"
+    
+    # 按照配置规范注册 config_schema
     config_schema = {
         "goal": {
             "type": "textarea",
             "label": "目标 (goal)",
             "placeholder": "LLM 分析目标，例如: 分析最新的 AI 技术突破..."
+        },
+        "metadata.search_topic": {
+            "type": "select",
+            "label": "搜索主题类型",
+            "options": [
+                {"value": "news", "label": "新闻资讯 (最新时效)"},
+                {"value": "general", "label": "通用网页 (历史数据)"}
+            ],
+            "default": "news",
+            "placeholder": "请选择搜索主题类型"
+        },
+        "metadata.search_time_range": {
+            "type": "select",
+            "label": "搜索时间范围",
+            "options": [
+                {"value": "day", "label": "当天 (24小时内)"},
+                {"value": "week", "label": "最近1周"},
+                {"value": "month", "label": "最近1月"},
+                {"value": "year", "label": "最近1年"}
+            ],
+            "default": "day",
+            "placeholder": "请选择搜索时间范围"
         }
     }
+    
     required_secrets = {
         "OPENROUTER_API_KEY": "OpenRouter API 密钥，用于调用 LLM 生成热点分析。",
         "OPENROUTER_API_ENDPOINT": "自定义 OpenRouter 兼容接口，默认 `https://openrouter.ai/api/v1/chat/completions`。",
@@ -126,15 +151,13 @@ class TrendingFetcher(BaseFetcher):
             return result
 
     def _search_web(self, query: str) -> list:
-        """
-        调用 Tavily API 获取实时新闻信息
-        """
+        """调用 Tavily API 获取实时信息"""
         import httpx
         try:
-            # 从 metadata 中动态读取检索参数，若未配置则默认检索当天（"day"）的新闻（"news"）
+            # 安全读取通过 config_schema 注册并配置的 metadata 参数
             metadata = getattr(self.source, "metadata", {}) or {}
             search_topic = metadata.get("search_topic", "news")
-            search_time_range = metadata.get("search_time_range", "day")  # 可选: "day", "week"
+            search_time_range = metadata.get("search_time_range", "day")
 
             with httpx.Client(timeout=10) as client:
                 headers = {
@@ -272,7 +295,7 @@ class TrendingFetcher(BaseFetcher):
 
 ### 3. 核心洞察与行动建议
 - 提炼 1-2 个最值得关注的核心洞察
-- 给出对目标用户有实际价值的建议或启示
+- 给出对目标用户有实际价值的建议 or 启示
 
 ## 质量标准
 - 内容基于事实，避免猜测；不确定信息标注「待验证」
