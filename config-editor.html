@@ -1098,6 +1098,7 @@
       onConfigChange();
     }
 
+    // Safe retrieval
     function getSource(id) {
       return sources.find(s => s._id === id);
     }
@@ -1352,14 +1353,29 @@
     }
 
     function renderFieldInput(s, key, field) {
-      const val = s[key] !== undefined ? s[key] : '';
+      // 兼容及自动补全默认值
+      let val = s[key];
+      if (val === undefined || val === '') {
+        val = field.default !== undefined ? field.default : '';
+        if (val !== '') {
+          s[key] = val;
+        }
+      }
       const label = field.label || key;
       const placeholder = field.placeholder || '';
       const hint = field.hint ? `<span class="hint">${field.hint}</span>` : '';
 
       if (field.type === 'select') {
         const optionsHtml = (field.options || [])
-          .map(opt => `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt || '--'}</option>`)
+          .map(opt => {
+            if (typeof opt === 'object' && opt !== null) {
+              const optVal = opt.value !== undefined ? opt.value : '';
+              const optLabel = opt.label || optVal || '--';
+              return `<option value="${optVal}" ${val === optVal ? 'selected' : ''}>${optLabel}</option>`;
+            } else {
+              return `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt || '--'}</option>`;
+            }
+          })
           .join('');
         return `
           <div class="form-row">
@@ -1710,9 +1726,17 @@
             for (const key in fetcher.schema) {
               if (key.startsWith('metadata.')) {
                 const metaKey = key.split('.')[1];
-                s[key] = (item.metadata && item.metadata[metaKey] !== undefined) ? item.metadata[metaKey] : '';
+                let loadedVal = (item.metadata && item.metadata[metaKey] !== undefined) ? item.metadata[metaKey] : '';
+                if (loadedVal === '' && fetcher.schema[key].default !== undefined) {
+                  loadedVal = fetcher.schema[key].default;
+                }
+                s[key] = loadedVal;
               } else {
-                s[key] = item[key] !== undefined ? item[key] : '';
+                let loadedVal = item[key] !== undefined ? item[key] : '';
+                if (loadedVal === '' && fetcher.schema[key].default !== undefined) {
+                  loadedVal = fetcher.schema[key].default;
+                }
+                s[key] = loadedVal;
               }
             }
           }
