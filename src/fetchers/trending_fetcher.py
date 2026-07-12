@@ -126,9 +126,16 @@ class TrendingFetcher(BaseFetcher):
             return result
 
     def _search_web(self, query: str) -> list:
-        """调用 Tavily API 获取实时信息"""
+        """
+        调用 Tavily API 获取实时新闻信息
+        """
         import httpx
         try:
+            # 从 metadata 中动态读取检索参数，若未配置则默认检索当天（"day"）的新闻（"news"）
+            metadata = getattr(self.source, "metadata", {}) or {}
+            search_topic = metadata.get("search_topic", "news")
+            search_time_range = metadata.get("search_time_range", "day")  # 可选: "day", "week"
+
             with httpx.Client(timeout=10) as client:
                 headers = {
                     "Authorization": f"Bearer {self.tavily_api_key}",
@@ -137,7 +144,9 @@ class TrendingFetcher(BaseFetcher):
                 payload = {
                     "query": query,
                     "max_results": 3,
-                    "search_depth": "advanced"
+                    "search_depth": "advanced",
+                    "topic": search_topic,
+                    "time_range": search_time_range
                 }
                 resp = client.post(
                     "https://api.tavily.com/search",
