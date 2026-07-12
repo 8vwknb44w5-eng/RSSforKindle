@@ -49,7 +49,7 @@ Ought Gather 是一个 Python 自动化信息聚合工具。它从 RSS、网页�
 
 **2. 配置内容源及环境变量**
 
-[可视化配置内容源](https://liusonwood.github.io/oughtgather/)
+[可视化配置内容源](https://liusonwood.github.io/OughtGather/)
 
 见下方 [Secrets 配置](#secrets-配置) 一节。
 
@@ -234,12 +234,12 @@ on:
 
 ## Config Editor 使用
 
-项目提供了一个可视化 HTML [配置编辑器](https://liusonwood.github.io/oughtgather/)，无需安装任何依赖。
+项目提供了一个可视化 HTML [配置编辑器](https://liusonwood.github.io/OughtGather/)，无需安装任何依赖。
 
 **在线版**（推荐）：
 
 ```text
-https://liusonwood.github.io/oughtgather/
+https://liusonwood.github.io/OughtGather/
 ```
 
 **离线版**：下载并打开仓库里的 `config-editor.html`。
