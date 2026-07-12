@@ -946,6 +946,46 @@
         "type": "textarea",
         "label": "目标 (goal)",
         "placeholder": "LLM 分析目标，例如: 分析最新的 AI 技术突破..."
+      },
+      "metadata.search_topic": {
+        "type": "select",
+        "label": "搜索主题类型",
+        "options": [
+          {
+            "value": "news",
+            "label": "新闻资讯 (最新时效)"
+          },
+          {
+            "value": "general",
+            "label": "通用网页 (历史数据)"
+          }
+        ],
+        "default": "news",
+        "placeholder": "请选择搜索主题类型"
+      },
+      "metadata.search_time_range": {
+        "type": "select",
+        "label": "搜索时间范围",
+        "options": [
+          {
+            "value": "day",
+            "label": "当天 (24小时内)"
+          },
+          {
+            "value": "week",
+            "label": "最近1周"
+          },
+          {
+            "value": "month",
+            "label": "最近1月"
+          },
+          {
+            "value": "year",
+            "label": "最近1年"
+          }
+        ],
+        "default": "day",
+        "placeholder": "请选择搜索时间范围"
       }
     },
     "required_secrets": {
