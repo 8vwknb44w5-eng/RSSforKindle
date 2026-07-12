@@ -935,7 +935,7 @@ nav li {
 #toc li {
     margin: 0.8em 0;
 }
-#toc .article-link {
+#toc .section-link {
   font-weight: bold !important;
   font-size: 1.2em !important;
   color: #111111 !important;
@@ -945,7 +945,7 @@ nav li {
   text-decoration: none !important;
 }
 
-#toc .section-link { 
+#toc .article-link { 
     font-weight: normal !important; 
     font-size: 1.0em !important; 
     color: #0066cc !important; 
