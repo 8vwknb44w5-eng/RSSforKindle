@@ -561,6 +561,9 @@ class TestTrendingFetcher:
         assert "has_search_context" in result.articles[0].metadata
         assert result.articles[0].metadata["has_search_context"] is True
         assert "Search content 1" in result.articles[0].content
+        # 作者应使用实际调用的 LLM 模型名称
+        assert result.articles[0].author == "openai/gpt-4o"
+        assert result.articles[0].metadata["model"] == "openai/gpt-4o"
 
 
     @patch.dict("os.environ", {}, clear=True)
@@ -581,10 +584,11 @@ class TestTrendingFetcher:
             type="trending", src="AI 趋势",
             goal="分析 AI",
         )
-        with patch("src.fetchers.trending_fetcher.TrendingFetcher._call_llm_api", return_value="<p>内容</p>"):
+        with patch("src.fetchers.trending_fetcher.TrendingFetcher._call_llm_api", return_value=("<p>内容</p>", "test-model")):
             fetcher = TrendingFetcher(source)
             result = fetcher.fetch()
             assert result.articles[0].title == "热点分析: AI 趋势"
+            assert result.articles[0].author == "test-model"
 
     @patch.dict("os.environ", {"OPENROUTER_API_KEY": "test_key_456"})
     def test_format_as_html_paragraphs(self, trending_source):

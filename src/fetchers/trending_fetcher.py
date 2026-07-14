@@ -89,7 +89,7 @@ class TrendingFetcher(BaseFetcher):
             search_results = self._search_web(self.source.src) if self.tavily_api_key else []
 
             # 2. 调用 LLM API
-            analysis = self._call_llm_api(search_results)
+            analysis, model = self._call_llm_api(search_results)
 
             if not analysis:
                 result.success = False
@@ -97,17 +97,18 @@ class TrendingFetcher(BaseFetcher):
                 return result
 
             # 创建文章对象（带当日时间戳，用于去重哈希计算）
+            # 作者使用实际调用的 LLM 模型名称
             title = self.source.title or f"热点分析: {self.source.src}"
             today = get_now().strftime("%Y-%m-%d")
             article = Article(
                 title=title,
                 content=analysis,
                 url=self.source.src,
-                author="AI Analysis",
+                author=model,
                 published_date=today,
                 metadata={
                     "goal": self.source.goal,
-                    "model": self.source.model or "default",
+                    "model": model,
                     "has_search_context": len(search_results) > 0
                 }
             )
@@ -150,12 +151,12 @@ class TrendingFetcher(BaseFetcher):
             self.logger.error(f"Search failed: {e}")
             return []
 
-    def _call_llm_api(self, search_results: list) -> Optional[str]:
+    def _call_llm_api(self, search_results: list) -> tuple:
         """
         调用 LLM API
 
         Returns:
-            Optional[str]: 分析结果 HTML
+            tuple: (分析结果 HTML, 实际调用的模型名称)；调用失败时内容为 None
         """
         # 构造 prompt
         prompt = self._build_prompt(search_results)
@@ -218,14 +219,14 @@ class TrendingFetcher(BaseFetcher):
             # 提取响应内容
             content = data.get("choices", [{}])[0].get("message", {}).get("content")
             if content:
-                return self._format_as_html(content)
+                return self._format_as_html(content), model
 
             self.logger.error(f"Unexpected API response: {data}")
-            return None
+            return None, model
 
         except Exception as e:
             self.logger.error(f"LLM API call failed: {e}")
-            return None
+            return None, model
 
     def _build_prompt(self, search_results: list) -> str:
         """
