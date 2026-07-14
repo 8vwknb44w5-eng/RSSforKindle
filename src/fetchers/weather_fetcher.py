@@ -143,9 +143,11 @@ class WeatherFetcher(BaseFetcher):
             f"温度：{temp_min}°C 至 {temp_max}°C<br>"
             f"降水量：{precip} mm<br>"
             f"云量：{cloud}%<br>"
+
+            f"湿度：{humidity}%<br><br>"
             f"白天风力：{wind_dir_day}（{wind_360_day}°），{wind_scale_day}级，风速 {wind_speed_day} km/h<br>"
-            f"夜间风力：{wind_dir_night}（{wind_360_night}°），{wind_scale_night}级，风速 {wind_speed_night} km/h<br>"
-            f"湿度：{humidity}%<br>"
+            f"夜间风力：{wind_dir_night}（{wind_360_night}°），{wind_scale_night}级，风速 {wind_speed_night} km/h<br><br>"
+            
             f"能见度：{vis} km<br>"
             f"日出/日落：{sunrise} / {sunset}<br>"
             f"月出/月落：{moonrise} / {moonset}（月相：{moon_phase}，{moon_phase_icon}）<br>"
@@ -176,7 +178,7 @@ class WeatherFetcher(BaseFetcher):
             article = Article(
                 title=title,
                 content=description,
-                url=f"https://github.com/liusonwood/rssqweather#{day_forecast.get('fxDate')}",
+                url=day_forecast.get("fxDate"),
                 published_date=day_forecast.get("fxDate"),
                 author="QWeather",
                 metadata={"city": city_name, "location_id": location_id}
