@@ -665,36 +665,36 @@ class EPUBGenerator:
     </style>
 </head>
 <body>
-    <h1 class="summary-title">推送汇总</h1>
+    <h1 class=\"summary-title\">Summary / 推送汇总</h1>
     {generate_toc_link("toc_summary")}
 
 
     <div class="card">
-        <div class="card-title"><span class="emoji">ℹ️</span> 关于 Ought Gather</div>
-        <p class="intro-text">Ought Gather 是一款专为深度阅读与墨水屏爱好者打造的自动化内容聚合与 Kindle 推送工具。
-        它能够定时从您信任的 RSS、订阅邮件、网页、 AI 热点等订阅源中提取最纯净的资讯，经过排版净化、图片压缩与智能去重，
-        自动生成符合 EPUB 3.0 标准的精美电子书，并一键推送到您的 Kindle 设备。</p>
-        <p class="intro-text">想要添加或修改订阅源、查看系统说明或贡献代码，请访问 GitHub 项目主页，或使用内置的配置编辑器 <code>config-editor.html</code> 进行可视化管理。</p>
-        <p class="intro-text">GitHub 项目链接：<a href="https://github.com/liusonwood/oughtgather">https://github.com/liusonwood/oughtgather</a></p>
+        <div class=\"card-title\"><span class=\"emoji\">ℹ️</span> About / 关于 Ought Gather</div>
+        <p class=\"intro-text\">Automated information aggregator delivering custom RSS, web articles, and newsletters to your Kindle as daily EPUBs
+        <br>自动化信息聚合工具，支持将 RSS、网页、邮件等定时打包为 EPUB 推送至 Kindle。</p>
+        <p class=\"intro-text\">For configuration or contribution, please visit the GitHub repository or use <code>config-editor.html</code>.<br>
+        想要添加或修改订阅源、查看系统说明或贡献代码，请访问 GitHub 项目主页，或使用内置的配置编辑器 <code>config-editor.html</code> 进行可视化管理。</p>
+        <p class=\"intro-text\">GitHub: <a href=\"https://github.com/liusonwood/oughtgather\">https://github.com/liusonwood/oughtgather</a></p>
     </div>
     
     <div class="card">
-        <div class="card-title">运行数据统计</div>
-        <div class="stat-item"><span class="stat-label">推送时间：</span>{push_time}</div>
-        <div class="stat-item"><span class="stat-label">运行耗时：</span>{runtime_str}</div>
-        <div class="stat-item"><span class="stat-label">数据源总数：</span>{total_sources} 个</div>
-        <div class="stat-item"><span class="stat-label">新增文章：</span><span class="tag-success">{total_articles}</span> 篇</div>
-        <div class="stat-item"><span class="stat-label">成功抓取：</span>新增 <span class="tag-success">{success_sources}</span> 个</div>
-        <div class="stat-item"><span class="stat-label">抓取失败：</span><span class="tag-failed">{failed_sources}</span> 个</div>
+        <div class=\"card-title\">Statistics / 运行数据统计</div>
+        <div class=\"stat-item\"><span class=\"stat-label\">Time / 推送时间：</span>{push_time}</div>
+        <div class=\"stat-item\"><span class=\"stat-label\">Runtime / 运行耗时：</span>{runtime_str}</div>
+        <div class=\"stat-item\"><span class=\"stat-label\">Sources / 数据源总数：</span>{total_sources}</div>
+        <div class=\"stat-item\"><span class=\"stat-label\">Articles / 新增文章：</span><span class=\"tag-success\">{total_articles}</span></div>
+        <div class=\"stat-item\"><span class=\"stat-label\">Success / 成功抓取：</span><span class=\"tag-success\">{success_sources}</span></div>
+        <div class=\"stat-item\"><span class=\"stat-label\">Failed / 抓取失败：</span><span class=\"tag-failed\">{failed_sources}</span></div>
     </div>
 
     <div class="card">
-        <div class="card-title"><span class="emoji">⚠️</span> 异常与错误记录</div>
+        <div class=\"card-title\"><span class=\"emoji\">⚠️</span> Errors / 异常与错误记录</div>
         {error_log_content}
     </div>
     
     <div class="card">
-        <div class="card-title"><span class="emoji">🔌</span> 订阅源详情</div>
+        <div class=\"card-title\"><span class=\"emoji\">🔌</span> Source Details / 订阅源详情</div>
         <ul class="source-list">
             {source_details}
         </ul>
@@ -815,10 +815,10 @@ class EPUBGenerator:
             content += """
     <!-- EPUB 3.0 landmarks: toc + bodymatter 均指向 contents.xhtml -->
     <!-- Kindle 根据此块决定"打开时跳转到哪里"，hidden 使其不在阅读器目录中显示 -->
-    <nav epub:type="landmarks" id="landmarks" hidden="">
+    <nav epub:type=\"landmarks\" id=\"landmarks\" hidden=\"\">
         <ol>
-            <li><a epub:type="toc" href="contents.xhtml">Table of Contents</a></li>
-            <li><a epub:type="bodymatter" href="contents.xhtml">Start of Content</a></li>
+            <li><a epub:type=\"toc\" href=\"contents.xhtml\">Table of Contents / 目录</a></li>
+            <li><a epub:type=\"bodymatter\" href=\"contents.xhtml\">Start of Content / 开始阅读</a></li>
         </ol>
     </nav>
 """
