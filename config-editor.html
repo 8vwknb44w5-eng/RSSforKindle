@@ -1046,6 +1046,17 @@
     "src_placeholder": "网页 URL",
     "schema": {},
     "required_secrets": {}
+  },
+  "xpath_list_auto": {
+    "src_placeholder": "请输入列表页的 URL",
+    "schema": {
+      "metadata.list_xpath": {
+        "type": "text",
+        "label": "列表页链接 XPath",
+        "placeholder": "例如: //div[@class='news-list']//a/@href"
+      }
+    },
+    "required_secrets": {}
   }
 };
     // DYNAMIC_FETCHERS_DATA_END
