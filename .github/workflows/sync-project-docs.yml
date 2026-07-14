@@ -8,11 +8,21 @@ on:
       - 'scripts/update_workflow_secrets.py'
       - 'scripts/update_editor.py'
       - 'README.md'
+      - 'config-editor.html'
       - '.github/workflows/daily-gather.yml'
+      - '.github/workflows/sync-project-docs.yml'
   workflow_dispatch:
 
+# contents: write 用于 sync job 的 commit/push；pages/id-token 用于 deploy-pages job
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+# 防止同时 push 文档和部署 Pages 产生竞争
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   sync:
@@ -43,3 +53,34 @@ jobs:
           else
             echo "No changes to sync"
           fi
+
+  deploy-pages:
+    needs: sync
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare Pages artifact
+        run: |
+          mkdir -p public
+          cp config-editor.html public/index.html
+          touch public/.nojekyll
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
