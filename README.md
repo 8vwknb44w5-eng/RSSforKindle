@@ -1,10 +1,18 @@
-# Ought Gather
+<div align="center">
+
+# 📖 Ought Gather
+
+**自动化信息聚合工具，支持将 RSS、网页、邮件等定时打包为 EPUB 推送至 Kindle**
 
 [![Daily Gather](https://github.com/liusonwood/oughtgather/actions/workflows/daily-gather.yml/badge.svg)](https://github.com/liusonwood/oughtgather/actions/workflows/daily-gather.yml)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![EPUB 3.0](https://img.shields.io/badge/EPUB-3.0-6f42c1)](docs/EPUB_COMPLIANCE.md)
 [![Kindle Delivery](https://img.shields.io/badge/Kindle-Email%20Delivery-orange)](#github-actions-部署)
+
+🌐 [简体中文](./README.md) | [English](./README_EN.md)
+
+</div>
 
 Ought Gather 是一个 Python 自动化信息聚合工具。它从 RSS、网页、newsletter、稍后阅读 等可自定义内容源收集内容，每天定时发送到 Kindle 阅读。
 
@@ -413,7 +421,7 @@ python3.11 scripts/update_workflow_secrets.py
 .
 ├── LICENSE
 ├── README.md
-├──  cloudflare- worker/ # worker部署触发器
+├── cloudflare- worker/ # worker部署触发器
 ├── config-editor.html
 ├── config.json
 ├── config.template.json

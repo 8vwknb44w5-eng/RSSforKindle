@@ -6,18 +6,21 @@
 
 ### 安装依赖
 
+本项目的所有测试依赖已直接包含在 `requirements.txt` 中：
+
 ```bash
 pip install -r requirements.txt
 ```
 
-需要额外安装测试依赖：
+其中包含的测试核心依赖有：
 - `pytest` — 测试框架
 - `pytest-mock` — mock 辅助工具
+- `pytest-cov` — 代码覆盖率统计工具
 
 ### 运行测试
 
 ```bash
-# 运行所有测试
+# 运行所有测试（默认会自动运行覆盖率统计，并显示未覆盖的行数）
 python -m pytest tests/
 
 # 显示详细信息
@@ -37,6 +40,9 @@ python -m pytest tests/ -x
 
 # 显示 print 输出（默认被捕获）
 python -m pytest tests/ -s
+
+# 临时禁用覆盖率统计（调试单项测试时可加快执行速度）
+python -m pytest tests/ --no-cov
 ```
 
 ## 测试文件结构
@@ -46,18 +52,21 @@ tests/
 ├── __init__.py
 ├── conftest.py              # 共享 fixtures
 ├── test_config.py           # 配置加载和验证
-├── test_content_processor.py # 内容处理规则
-├── test_dedup_tracker.py    # 去重追踪
-├── test_epub_compliance.py  # EPUB 合规性验证
-├── test_epub_helpers.py     # EPUB 辅助工具
-├── test_fetchers.py         # 各种抓取器（mock HTTP）
-├── test_helpers.py          # 工具函数
-├── test_image_bugs.py       # 特殊图片 Bug 测试
-├── test_image_processor.py  # 图片处理
+├── test_content_processor.py # 内容处理规则（清理、剔除等）
+├── test_cover_generator.py  # 书籍封面生成及文字叠加效果
+├── test_dedup_tracker.py    # 去重追踪器（缓存与记录清理逻辑）
+├── test_epub_compliance.py  # EPUB 合规性验证（基于 epubcheck.jar）
+├── test_epub_helpers.py     # EPUB 辅助工具（XML 节点操作、章节元数据等）
+├── test_fetchers.py         # 各种内容抓取器（mock HTTP，支持 RSS、Mail、Web、Trending/LLM 等）
+├── test_helpers.py          # 工具函数（时间戳计算、时间格式化等）
+├── test_image_bugs.py       # 特殊图片 Bug 及边界场景测试
+├── test_image_processor.py  # 图片压缩、过滤与缩放
 ├── test_integration.py      # 完整工作流集成测试
-├── test_raindropio_fetcher.py # Raindrop Fetcher
-├── test_uploader.py         # Uploader 测试
-└── test_weather_fetcher.py  # Weather Fetcher
+├── test_mailer.py           # 邮件发送器（SMTP 传输与 TLS/SSL 校验）
+├── test_main.py             # 主控制流/编排逻辑（main.py 的 Mock 与异常逻辑）
+├── test_raindropio_fetcher.py # Raindrop.io 书签抓取
+├── test_uploader.py         # 备份上传器（WebDAV 接口）
+└── test_weather_fetcher.py  # 天气源数据抓取与解析
 ```
 
 ## 核心测试概念
@@ -75,9 +84,12 @@ Fixtures 是 pytest 的核心，在 `conftest.py` 中定义，提供测试所需
 | Fixture | 描述 |
 | :--- | :--- |
 | `rss_source` | 标准 RSS 内容源 |
+| `rss_full_text_source` | 启用全文抓取的 RSS 内容源 |
 | `mail_source` | 标准邮件内容源 |
 | `web_source` | 标准网页内容源 |
+| `trending_source` | 标准 Trending 内容源（使用 LLM 分析） |
 | `tmp_dir` | 临时目录，测试后自动清理 |
+| `tmp_config_file` | 自动加载并写入最小化测试配置的临时配置文件路径 |
 | `sample_html` | 用于测试内容处理的 HTML 片段 |
 
 在测试中使用：
@@ -134,6 +146,14 @@ def test_custom_fetcher_auto_registration():
 - 测试会自动检测环境，如果缺失则跳过测试。
 
 下载[epubcheck](https://github.com/w3c/epubcheck)
+
+#### 4.5 覆盖率测试 (Coverage Testing)
+本项目在 `pytest.ini` 中默认配置了 `pytest-cov`，会在每次测试运行结束时，自动在终端输出当前 `src/` 目录下各文件的覆盖率详情。
+- 如果想要生成图形化的 HTML 覆盖率报告，可以运行：
+  ```bash
+  python -m pytest tests/ --cov-report=html
+  ```
+  运行后，会在项目根目录下生成 `htmlcov/` 目录，用浏览器打开其下的 `index.html` 即可直观查看哪些代码行未被测试覆盖。
 
 ## 最佳实践
 
