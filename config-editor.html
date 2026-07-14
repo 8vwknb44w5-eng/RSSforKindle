@@ -1374,8 +1374,8 @@
       if (metadataFields.length > 0) {
         html += `
           <div style="margin-top: 10px;">
-            <span class="collapse-toggle" onclick="toggleCollapse(this)">▶ 附加参数 (metadata)</span>
-            <div class="collapsible" data-collapsible="metadata">
+            <span class="collapse-toggle" onclick="toggleCollapse(this)">▼ 附加参数 (metadata)</span>
+            <div class="collapsible open" data-collapsible="metadata">
               ${metadataFields.map(([key, field]) => renderFieldInput(s, key, field)).join('')}
             </div>
           </div>
