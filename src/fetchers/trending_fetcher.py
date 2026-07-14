@@ -183,6 +183,21 @@ class TrendingFetcher(BaseFetcher):
             self.logger.error(f"Search failed: {e}")
             return []
 
+    def _get_target_language(self) -> str:
+        """
+        根据系统时区判断目标语言，默认中文
+        """
+        try:
+            # 尝试获取时区名称 (e.g., 'CST', 'UTC', 'Asia/Shanghai')
+            tz_name = datetime.now().astimezone().tzname() or ""
+            
+            # 映射列表 (简单示例)
+            if tz_name in ['EST', 'EDT', 'CST', 'CDT', 'MST', 'MDT', 'PST', 'PDT', 'GMT', 'UTC', 'CET', 'CEST']:
+                return "English"
+        except Exception:
+            pass
+        return "Chinese" # 默认中文
+
     def _call_llm_api(self, search_results: list) -> tuple:
         """
         调用 LLM API
@@ -206,20 +221,22 @@ class TrendingFetcher(BaseFetcher):
             or "google/gemma-4-31b-it:free"
         )
 
+        target_lang = self._get_target_language()
         payload = {
             "model": model,
             "messages": [
                 {
                     "role": "system",
                     "content": (
-                        "你是一位资深行业分析师，专注于捕捉前沿信息、识别关键趋势并提炼可行动的洞察。"
-                        "在分析过程中，必须充分利用用户提供的【实时联网搜索结果】作为核心事实依据和参考。"
-                        "你的分析风格：深度优于广度，数据支撑观点，避免套话与泛泛而谈，语言简练有力。\n\n"
-                        "输出规范：\n"
-                        "- 严格使用 Markdown 格式，层级清晰（H2/H3/列表/加粗）\n"
-                        "- 每个要点须包含具体事实或数据，禁止空洞描述\n"
-                        "- 若涉及不确定信息，明确标注「待验证」\n"
-                        "- 不要输出 markdown 代码块包裹符"
+                        "You are an expert industry analyst specializing in capturing cutting-edge information, identifying key trends, and distilling actionable insights."
+                        "When performing the analysis, you must leverage the [Real-time Web Search Results] provided by the user as your core factual basis and reference."
+                        "Your analysis style: Depth over breadth, data-supported arguments, avoid empty jargon or generalities, concise and impactful language."
+                        f"Output language: {target_lang} only."
+                        "\n\nOutput Specifications:\n"
+                        "- Strictly use Markdown format with clear hierarchy (H2/H3/lists/bold)\n"
+                        "- Each point must contain specific facts or data; avoid hollow descriptions\n"
+                        "- If information is uncertain, clearly mark it as 'To be verified'\n"
+                        "- Do not output Markdown code block wrappers"
                     )
                 },
                 {
@@ -262,46 +279,46 @@ class TrendingFetcher(BaseFetcher):
 
     def _build_prompt(self, search_results: list) -> str:
         """
-        构造 prompt
+        Construct prompt
 
         Returns:
-            str: prompt 文本
+            str: prompt text
         """
-        today = get_now().strftime("%Y年%m月%d日")
+        today = get_now().strftime("%Y-%m-%d")
         
         search_context = ""
         if search_results:
-            search_context = "\n## 实时联网搜索结果（参考用）\n"
+            search_context = "\n## Real-time Web Search Results (for reference)\n"
             for i, res in enumerate(search_results, 1):
                 search_context += f"[{i}] {res.get('title')}: {res.get('content')}\n"
         
-        return f"""## 分析任务
+        return f"""## Analysis Task
 
-**当前日期**: {today}
-**分析主题**: {self.source.src}
-**核心目标**: {self.source.goal}
+**Current Date**: {today}
+**Topic**: {self.source.src}
+**Core Goal**: {self.source.goal}
 {search_context}
 
-## 输出要求
+## Output Requirements
 
-请围绕上述主题，提供一份结构化的深度分析报告，涵盖以下维度：
+Please provide a structured, in-depth analysis report around the above topic, covering the following dimensions:
 
-### 1. 近期热点动态（3-5 条）
-- 列举近期最值得关注的具体事件或进展
-- 每条须有时间线索或具体来源（如有）
+### 1. Recent Hot Dynamics (3-5 items)
+- List the most noteworthy specific events or developments
+- Each item must include time context or specific sources (if available)
 
-### 2. 关键趋势与信号
-- 识别 2-3 个正在形成的中长期趋势
-- 说明每个趋势的驱动因素
+### 2. Key Trends and Signals
+- Identify 2-3 emerging medium-to-long-term trends
+- Explain the drivers for each trend
 
-### 3. 核心洞察与行动建议
-- 提炼 1-2 个最值得关注的核心洞察
-- 给出对目标用户有实际价值的建议 or 启示
+### 3. Core Insights and Actionable Recommendations
+- Extract 1-2 most noteworthy core insights
+- Provide recommendations or implications that have actual value for the target audience
 
-## 质量标准
-- 内容基于事实，避免猜测；不确定信息标注「待验证」
-- 语言精炼，每条要点不超过 60 字
-- 引用联网信息时，标注 [1], [2] 等来源
+## Quality Standards
+- Content is based on facts; avoid speculation; mark uncertain information as 'To be verified'
+- Language is concise; each key point should not exceed 60 words
+- When citing online information, annotate with [1], [2], etc.
 """
 
     def _format_as_html(self, text: str) -> str:
