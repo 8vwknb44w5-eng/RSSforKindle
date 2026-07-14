@@ -2,9 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Ought Gather 配置工具</title>
-  <script src="https://cdn.jsdelivr.net/npm/drag-drop-touch-polyfill@1.0.0/DragDropTouch.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 
@@ -640,6 +639,9 @@
       border-radius: var(--radius-md);
       cursor: grab;
       user-select: none;
+      -webkit-user-select: none;
+      /* Prevent the browser from hijacking touch for scroll/zoom so we can drag */
+      touch-action: none;
       transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
       box-shadow: var(--shadow-sm);
     }
@@ -657,6 +659,15 @@
       box-shadow: none;
       transform: scale(0.98);
     }
+    /* Active state for native touch dragging on mobile */
+    .drag-item.touch-dragging {
+      opacity: 0.85;
+      border: 2px solid var(--primary);
+      box-shadow: 0 12px 28px rgba(42, 92, 67, 0.25);
+      transform: scale(1.02);
+      z-index: 50;
+      position: relative;
+    }
     .drag-item-handle {
       color: var(--text-muted);
       cursor: grab;
@@ -665,6 +676,8 @@
       display: flex;
       align-items: center;
       user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
     }
     .drag-item-content {
       flex: 1;
@@ -771,6 +784,25 @@
       .hint {
         width: auto;
         margin-left: 0;
+      }
+      /* Keep drag items compact and tappable on phones */
+      .drag-item {
+        padding: 12px 14px;
+      }
+      .drag-item-handle {
+        margin-right: 10px;
+        font-size: 1.2rem;
+      }
+      .drag-item-content {
+        gap: 10px;
+      }
+      .drag-item-info {
+        min-width: 0;
+        gap: 8px;
+      }
+      .drag-item-title {
+        max-width: 130px;
+        font-size: 0.92rem;
       }
     }
   </style>
@@ -1808,6 +1840,99 @@
           updateDragItemIndexes();
         });
       });
+
+      // Native touch support for mobile (HTML5 drag API doesn't fire on touchscreens)
+      attachTouchDragEvents();
+    }
+
+    // Native touch-based drag, so mobile works even without the HTML5 drag polyfill.
+    // Reuses getDragAfterElement() for consistent hit-testing with the desktop path.
+    function attachTouchDragEvents() {
+      const items = document.querySelectorAll('.drag-item');
+      items.forEach(item => {
+        if (item.__ogTouchBound) return;
+        item.__ogTouchBound = true;
+
+        let touchId = null;
+        let startX = 0;
+        let startY = 0;
+        let dragging = false;
+        let container = null;
+        let onMoveStart = null;
+
+        const onMove = (e) => {
+          if (!dragging || touchId === null) return;
+          const touch = findTouch(e.changedTouches, touchId);
+          if (!touch) return;
+          e.preventDefault(); // block scrolling/zooming while dragging
+          const afterElement = getDragAfterElement(container, touch.clientY);
+          if (afterElement == null) {
+            container.appendChild(item);
+          } else if (afterElement !== item) {
+            container.insertBefore(item, afterElement);
+          }
+        };
+
+        const cleanup = () => {
+          dragging = false;
+          touchId = null;
+          onMoveStart = null;
+          window.removeEventListener('touchmove', onMove, { passive: false });
+          window.removeEventListener('touchend', onEnd);
+          window.removeEventListener('touchcancel', onCancel);
+        };
+
+        const onEnd = (e) => {
+          if (findTouch(e.changedTouches, touchId) === null) return;
+          if (dragging) {
+            item.classList.remove('touch-dragging');
+            updateDragItemIndexes();
+          }
+          cleanup();
+        };
+
+        const onCancel = (e) => {
+          if (findTouch(e.changedTouches, touchId) === null && touchId !== null && dragging) {
+            item.classList.remove('touch-dragging');
+            updateDragItemIndexes();
+          }
+          cleanup();
+        };
+
+        item.addEventListener('touchstart', (e) => {
+          // Let inputs handle their own touches so users can still edit priority values
+          if (e.target.tagName === 'INPUT') return;
+          if (touchId !== null) return;
+          const touch = e.changedTouches[0];
+          touchId = touch.identifier;
+          startX = touch.clientX;
+          startY = touch.clientY;
+          container = item.parentNode;
+
+          // Commit to drag only after a small move, so taps still register
+          onMoveStart = (ev) => {
+            const t = findTouch(ev.changedTouches, touchId);
+            if (!t) return;
+            if (Math.abs(t.clientX - startX) < 4 && Math.abs(t.clientY - startY) < 4) return;
+            dragging = true;
+            item.classList.add('touch-dragging');
+            window.removeEventListener('touchmove', onMoveStart, { passive: false });
+            window.addEventListener('touchmove', onMove, { passive: false });
+          };
+
+          window.addEventListener('touchmove', onMoveStart, { passive: false });
+        }, { passive: false });
+
+        window.addEventListener('touchend', onEnd);
+        window.addEventListener('touchcancel', onCancel);
+      });
+    }
+
+    function findTouch(touchList, id) {
+      for (let i = 0; i < touchList.length; i++) {
+        if (touchList[i].identifier === id) return touchList[i];
+      }
+      return null;
     }
 
     function updateDragItemIndexes() {
