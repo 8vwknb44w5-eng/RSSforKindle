@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ought Gather 配置工具</title>
+  <script src="https://cdn.jsdelivr.net/npm/drag-drop-touch-polyfill@1.0.0/DragDropTouch.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 
@@ -946,6 +947,46 @@
         "type": "textarea",
         "label": "目标 (goal)",
         "placeholder": "LLM 分析目标，例如: 分析最新的 AI 技术突破..."
+      },
+      "metadata.search_topic": {
+        "type": "select",
+        "label": "搜索主题类型",
+        "options": [
+          {
+            "value": "news",
+            "label": "新闻资讯 (最新时效)"
+          },
+          {
+            "value": "general",
+            "label": "通用网页 (历史数据)"
+          }
+        ],
+        "default": "news",
+        "placeholder": "请选择搜索主题类型"
+      },
+      "metadata.search_time_range": {
+        "type": "select",
+        "label": "搜索时间范围",
+        "options": [
+          {
+            "value": "day",
+            "label": "当天 (24小时内)"
+          },
+          {
+            "value": "week",
+            "label": "最近1周"
+          },
+          {
+            "value": "month",
+            "label": "最近1月"
+          },
+          {
+            "value": "year",
+            "label": "最近1年"
+          }
+        ],
+        "default": "day",
+        "placeholder": "请选择搜索时间范围"
       }
     },
     "required_secrets": {
@@ -1058,6 +1099,7 @@
       onConfigChange();
     }
 
+    // Safe retrieval
     function getSource(id) {
       return sources.find(s => s._id === id);
     }
@@ -1312,14 +1354,29 @@
     }
 
     function renderFieldInput(s, key, field) {
-      const val = s[key] !== undefined ? s[key] : '';
+      // 兼容及自动补全默认值
+      let val = s[key];
+      if (val === undefined || val === '') {
+        val = field.default !== undefined ? field.default : '';
+        if (val !== '') {
+          s[key] = val;
+        }
+      }
       const label = field.label || key;
       const placeholder = field.placeholder || '';
       const hint = field.hint ? `<span class="hint">${field.hint}</span>` : '';
 
       if (field.type === 'select') {
         const optionsHtml = (field.options || [])
-          .map(opt => `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt || '--'}</option>`)
+          .map(opt => {
+            if (typeof opt === 'object' && opt !== null) {
+              const optVal = opt.value !== undefined ? opt.value : '';
+              const optLabel = opt.label || optVal || '--';
+              return `<option value="${optVal}" ${val === optVal ? 'selected' : ''}>${optLabel}</option>`;
+            } else {
+              return `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt || '--'}</option>`;
+            }
+          })
           .join('');
         return `
           <div class="form-row">
@@ -1670,9 +1727,17 @@
             for (const key in fetcher.schema) {
               if (key.startsWith('metadata.')) {
                 const metaKey = key.split('.')[1];
-                s[key] = (item.metadata && item.metadata[metaKey] !== undefined) ? item.metadata[metaKey] : '';
+                let loadedVal = (item.metadata && item.metadata[metaKey] !== undefined) ? item.metadata[metaKey] : '';
+                if (loadedVal === '' && fetcher.schema[key].default !== undefined) {
+                  loadedVal = fetcher.schema[key].default;
+                }
+                s[key] = loadedVal;
               } else {
-                s[key] = item[key] !== undefined ? item[key] : '';
+                let loadedVal = item[key] !== undefined ? item[key] : '';
+                if (loadedVal === '' && fetcher.schema[key].default !== undefined) {
+                  loadedVal = fetcher.schema[key].default;
+                }
+                s[key] = loadedVal;
               }
             }
           }

@@ -6,7 +6,7 @@
 [![EPUB 3.0](https://img.shields.io/badge/EPUB-3.0-6f42c1)](docs/EPUB_COMPLIANCE.md)
 [![Kindle Delivery](https://img.shields.io/badge/Kindle-Email%20Delivery-orange)](#github-actions-部署)
 
-Ought Gather 是一个 Python 自动化信息聚合工具。它从 RSS、网页、TestMail.app 邮件、Raindrop.io 等可自定义内容源收集内容，每天定时发送到 Kindle 阅读。
+Ought Gather 是一个 Python 自动化信息聚合工具。它从 RSS、网页、newsletter、稍后阅读 等可自定义内容源收集内容，每天定时发送到 Kindle 阅读。
 
 
 <p align="center">
@@ -47,12 +47,13 @@ Ought Gather 是一个 Python 自动化信息聚合工具。它从 RSS、网页�
 
 在 GitHub 页面点击 `Fork`，把项目复制到自己的账号下。
 
+**2. 配置内容源及环境变量**
 
-**3. 配置内容及环境变量**
+[可视化配置内容源](https://liusonwood.github.io/OughtGather/)
 
 见下方 [Secrets 配置](#secrets-配置) 一节。
 
-**4. 手动触发一次**
+**3. 手动触发一次**
 
 ```text
 Actions -> Daily Gather -> Run workflow
@@ -233,12 +234,12 @@ on:
 
 ## Config Editor 使用
 
-项目提供了一个可视化 HTML 配置编辑器，无需安装任何依赖。
+项目提供了一个可视化 HTML [配置编辑器](https://liusonwood.github.io/OughtGather/)，无需安装任何依赖。
 
 **在线版**（推荐）：
 
 ```text
-https://liusonwood.github.io/oughtgather/
+https://liusonwood.github.io/OughtGather/
 ```
 
 **离线版**：下载并打开仓库里的 `config-editor.html`。
@@ -387,7 +388,7 @@ class MyFetcher(BaseFetcher):
 ```
 </details>
 
-### 新增 fetcher 后，运行 `python3.11 scripts/update_editor.py` 同步到 `config-editor.html`。
+### 新增fetcher后同步文档和脚本
 
 **方式一**：Actions自动同步
 
@@ -412,6 +413,7 @@ python3.11 scripts/update_workflow_secrets.py
 .
 ├── LICENSE
 ├── README.md
+├──  cloudflare- worker/ # worker部署触发器
 ├── config-editor.html
 ├── config.json
 ├── config.template.json

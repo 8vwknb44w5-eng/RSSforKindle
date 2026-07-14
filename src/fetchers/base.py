@@ -163,7 +163,7 @@ class BaseFetcher(ABC):
             error=f"Failed after {self.max_retries} attempts: {last_error}"
         )
 
-    DEFAULT_TIMEOUT = 20
+    DEFAULT_TIMEOUT = 30
 
     def _make_request(
         self,

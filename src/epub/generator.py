@@ -935,15 +935,16 @@ nav li {
 #toc li {
     margin: 0.8em 0;
 }
-#toc .section-link { 
-    font-weight: bold !important; 
-    font-size: 1.2em !important; 
-    color: #111111 !important; 
-    display: block;
-    margin-top: 0.4em;
-    margin-bottom: 0.2em;
-    text-decoration: none !important;
+#toc .section-link {
+  font-weight: bold !important;
+  font-size: 1.2em !important;
+  color: #111111 !important;
+  display: block;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  text-decoration: none !important;
 }
+
 #toc .article-link { 
     font-weight: normal !important; 
     font-size: 1.0em !important; 
