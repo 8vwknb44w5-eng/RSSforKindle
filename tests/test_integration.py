@@ -526,6 +526,16 @@ class TestSectionDividers:
         finally:
             os.remove(epub_path)
 
+    def test_chapter_title_emoji_is_rendered_as_local_image(self, tmp_path):
+        source = ContentSource(type="rss", src="https://a.com/rss", title="测试源", priority=10)
+        epub_path = self._generate_epub([self._make_fetch_result(source, ["新闻 📰"])])
+        try:
+            chapter_html = self._read_epub_xhtml(epub_path, "chapter_0.xhtml")
+            assert 'src="images/emoji_1f4f0.png"' in chapter_html
+            assert "<h1>新闻 <img" in chapter_html
+        finally:
+            os.remove(epub_path)
+
     def test_divider_link_back_to_toc(self, tmp_path):
         """分隔页应包含返回目录的链接"""
         source = ContentSource(type="rss", src="https://a.com/rss", title="测试源", priority=10)

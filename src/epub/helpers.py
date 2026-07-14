@@ -6,6 +6,8 @@ EPUB 辅助工具模块
 import html as html_module
 from ebooklib import epub
 
+from src.processors.content_processor import ContentProcessor
+
 
 from typing import List, Dict
 
@@ -43,6 +45,7 @@ def create_section_divider_page(
         epub.EpubHtml: 分隔页对象
     """
     safe_title = html_module.escape(section_title)
+    rendered_title = ContentProcessor.render_text_with_emojis(section_title)
     toc_link = generate_toc_link(target_toc_id)
 
     articles_html = ""
@@ -59,7 +62,7 @@ def create_section_divider_page(
         articles_html += f'    <div id="toc" style="margin-top: 2em;">\n'
         articles_html += f'        <ol style="{STYLE_NESTED_OL}">\n'
         for article in articles_info:
-            safe_art_title = html_module.escape(article["title"])
+            safe_art_title = ContentProcessor.render_text_with_emojis(article["title"])
             safe_art_href = html_module.escape(article["file_name"])
             articles_html += (
                 f'            <li style="{STYLE_NESTED_LI}">'
@@ -76,7 +79,7 @@ def create_section_divider_page(
     <link rel="stylesheet" type="text/css" href="style/default.css"/>
 </head>
 <body>
-    <h1>{safe_title}</h1>
+    <h1>{rendered_title}</h1>
     {toc_link}
 {articles_html}</body>
 </html>"""
@@ -87,4 +90,3 @@ def create_section_divider_page(
     )
     divider.content = content
     return divider
-

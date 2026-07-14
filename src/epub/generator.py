@@ -75,7 +75,11 @@ class EPUBGenerator:
         book.spine = []
 
         # 7. 添加章节并收集所有独特的 Emoji
-        unique_emojis = set()
+        # 目录和章节标题也是可见内容，需在添加图片资源前预先收集。
+        unique_emojis = self._get_title_emojis(sections)
+        unique_emojis.update(
+            ContentProcessor.get_emojis_from_text(self.config.title.get_plain_text())
+        )
         self._add_chapters(book, sections, unique_emojis)
 
         # 8. 添加推送汇总章节 (包括 Emoji 收集)
@@ -228,17 +232,17 @@ class EPUBGenerator:
             divider_id += 1
 
             for article in articles:
+                # 标题是纯文本元数据；正文 h1 则使用本地图片渲染 emoji。
+                rendered_title = ContentProcessor.render_text_with_emojis(article.title)
+
                 # 生成章节内容
-                chapter_content = self._generate_chapter_content(article, chapter_id)
+                chapter_content = self._generate_chapter_content(
+                    article, chapter_id, rendered_title=rendered_title
+                )
                 
                 # 收集 Emoji 并替换为图片标签 (content)
                 unique_emojis.update(ContentProcessor.get_unique_emojis(chapter_content))
                 chapter_content = ContentProcessor.replace_emojis_with_images(chapter_content)
-
-                # 收集 Emoji 并替换为图片标签 (title)
-                title_content = ContentProcessor.wrap_emojis(article.title)
-                unique_emojis.update(ContentProcessor.get_unique_emojis(title_content))
-                article.title = ContentProcessor.replace_emojis_with_images(title_content)
 
                 # 创建章节
                 chapter = epub.EpubHtml(
@@ -363,7 +367,9 @@ class EPUBGenerator:
             f"Added {chapter_id} chapters and {divider_id} section dividers to EPUB"
         )
 
-    def _generate_chapter_content(self, article: Article, chapter_id: int) -> str:
+    def _generate_chapter_content(
+        self, article: Article, chapter_id: int, rendered_title: Optional[str] = None
+    ) -> str:
         """
         生成章节 HTML 内容 (EPUB 3.0 格式，返回目录链接在标题下方)
 
@@ -378,6 +384,7 @@ class EPUBGenerator:
 
         # 对标题和作者进行 HTML 转义，防止 & 等字符导致 XML 解析失败
         safe_title = html.escape(article.title)
+        rendered_title = rendered_title or ContentProcessor.render_text_with_emojis(article.title)
         safe_author = html.escape(article.author) if article.author else ""
 
         # EPUB 3.0 使用 HTML5 DOCTYPE
@@ -389,7 +396,7 @@ class EPUBGenerator:
     <link rel="stylesheet" type="text/css" href="style/default.css"/>
 </head>
 <body>
-    <h1>{safe_title}</h1>
+    <h1>{rendered_title}</h1>
     {toc_link}
 """
 
@@ -412,6 +419,18 @@ class EPUBGenerator:
 </html>"""
 
         return content_html
+
+    def _get_title_emojis(
+        self, sections: List[Tuple[ContentSource, List[Article], Optional[str]]]
+    ) -> set:
+        """Collect emojis from every visible section and article title."""
+        emojis = set()
+        for source, articles, source_title in sections:
+            section_title = self.toc_generator._get_source_title(source, articles, source_title)
+            emojis.update(ContentProcessor.get_emojis_from_text(section_title))
+            for article in articles:
+                emojis.update(ContentProcessor.get_emojis_from_text(article.title))
+        return emojis
 
     def _extract_image_src(self, img) -> Tuple[Optional[str], List[str]]:
         """
@@ -723,6 +742,7 @@ class EPUBGenerator:
         import html
         from ebooklib import epub as epub_lib
         safe_title = html.escape(book_title)
+        rendered_book_title = ContentProcessor.render_text_with_emojis(book_title)
         
         # 内联样式（作为 Kindle 兜底）：
         # EPUB 3.3 规范禁止 <style> 出现在 nav 文档的 <body> 中（EPUBCheck RSC-005），
@@ -758,7 +778,7 @@ class EPUBGenerator:
 </head>
 <body style="padding: 1em;">
     {nav_tag_start}
-        <h1 style="{STYLE_H1}">{safe_title}</h1>
+        <h1 style="{STYLE_H1}">{rendered_book_title}</h1>
         <ol style="{STYLE_OL}">
 """
         for item in toc:
@@ -767,7 +787,7 @@ class EPUBGenerator:
                 content += (
                     f'            <li id="toc_{item.uid}" style="{STYLE_LI}">'
                     f'<a class="section-link" href="{item.href}" style="{STYLE_SECTION_LINK}">'
-                    f'{html.escape(item.title)}</a></li>\n'
+                    f'{ContentProcessor.render_text_with_emojis(item.title)}</a></li>\n'
                 )
             elif isinstance(item, tuple) and len(item) == 2:
                 # 两级 structure（如 mail/rss）
@@ -775,14 +795,14 @@ class EPUBGenerator:
                 content += f'            <li id="toc_{section_link.uid}" style="{STYLE_LI}">\n'
                 content += (
                     f'                <a class="section-link" href="{section_link.href}" '
-                    f'style="{STYLE_SECTION_LINK}">{html.escape(section_link.title)}</a>\n'
+                    f'style="{STYLE_SECTION_LINK}">{ContentProcessor.render_text_with_emojis(section_link.title)}</a>\n'
                 )
                 content += f'                <ol style="{STYLE_NESTED_OL}">\n'
                 for link in links:
                     content += (
                         f'                    <li id="toc_{link.uid}" style="{STYLE_NESTED_LI}">'
                         f'<a class="article-link" href="{link.href}" style="{STYLE_ARTICLE_LINK}">'
-                        f'{html.escape(link.title)}</a></li>\n'
+                        f'{ContentProcessor.render_text_with_emojis(link.title)}</a></li>\n'
                     )
                 content += f'                </ol>\n'
                 content += f'            </li>\n'

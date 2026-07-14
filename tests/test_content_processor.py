@@ -594,6 +594,12 @@ class TestEmojiProcessing:
         assert "Hello" in result.content
         assert "World" in result.content
 
+    def test_render_text_with_emojis_escapes_text_and_uses_local_image(self):
+        rendered = ContentProcessor.render_text_with_emojis("标题 📰 <测试>")
+
+        assert 'src="images/emoji_1f4f0.png"' in rendered
+        assert "&lt;测试&gt;" in rendered
+
 class TestLayoutTableCleaning:
     """测试邮件布局表格与样式清洗行为"""
 
@@ -804,4 +810,3 @@ class TestImgAltTitleCleaning:
         # attrs should be cleaned and output correctly
         assert 'alt="A  -  B  -  C  -  D  -  E"' in result.content
         assert 'title="X  -  Y"' in result.content
-

@@ -3,6 +3,7 @@
 负责内容清洗、格式化和规则应用
 """
 
+import html as html_module
 import re
 from typing import Optional
 from bs4 import BeautifulSoup
@@ -143,6 +144,17 @@ class ContentProcessor:
         if soup.body:
             return soup.body.decode_contents()
         return str(soup)
+
+    @classmethod
+    def render_text_with_emojis(cls, text: str) -> str:
+        """Escape plain text and render any emoji in it as local image tags."""
+        escaped_text = html_module.escape(text)
+        return cls.replace_emojis_with_images(cls.wrap_emojis(escaped_text))
+
+    @classmethod
+    def get_emojis_from_text(cls, text: str) -> set:
+        """Extract emoji from plain text using the same matching rules as rendering."""
+        return cls.get_unique_emojis(cls.wrap_emojis(text))
 
     def _apply_exclude(self, html: str) -> str:
         """
