@@ -748,10 +748,20 @@ class EPUBGenerator:
         # EPUB 3.3 规范禁止 <style> 出现在 nav 文档的 <body> 中（EPUBCheck RSC-005），
         # 因此改用 inline style 属性，所有阅读器（含 Kindle）都能正确渲染，
         # 同时通过 nav.add_link() 注册的外部 CSS 为支持它的阅读器提供完整样式。
-        STYLE_SECTION_LINK = (
-            "font-weight: bold; font-size: 1.2em; color: #111111; "
-            "display: block; margin-top: 0.4em; margin-bottom: 0.2em; text-decoration: none;"
-        )
+        if is_nav:
+            STYLE_SECTION_LINK = (
+                "font-weight: bold; font-size: 1.2em; color: #111111; "
+                "display: block; margin-top: 0.4em; margin-bottom: 0.2em; text-decoration: none;"
+            )
+            STYLE_H2 = ""
+        else:
+            STYLE_H2 = (
+                "font-size: 1.2em; font-weight: bold; margin-top: 0.4em; margin-bottom: 0.2em; "
+                "margin-left: 0; margin-right: 0; padding: 0; display: block;"
+            )
+            STYLE_SECTION_LINK = (
+                "color: #111111; text-decoration: none;"
+            )
         STYLE_ARTICLE_LINK = (
             "font-weight: normal; font-size: 1.0em; color: #0066cc; text-decoration: none;"
         )
@@ -784,19 +794,18 @@ class EPUBGenerator:
         for item in toc:
             if isinstance(item, epub_lib.Link):
                 # 扁平链接（如 summary），使用大章节样式
-                content += (
-                    f'            <li id="toc_{item.uid}" style="{STYLE_LI}">'
-                    f'<a class="section-link" href="{item.href}" style="{STYLE_SECTION_LINK}">'
-                    f'{ContentProcessor.render_text_with_emojis(item.title)}</a></li>\n'
-                )
+                link_html = f'<a class="section-link" href="{item.href}" style="{STYLE_SECTION_LINK}">{ContentProcessor.render_text_with_emojis(item.title)}</a>'
+                if not is_nav:
+                    link_html = f'<h2 style="{STYLE_H2}">{link_html}</h2>'
+                content += f'            <li id="toc_{item.uid}" style="{STYLE_LI}">{link_html}</li>\n'
             elif isinstance(item, tuple) and len(item) == 2:
                 # 两级 structure（如 mail/rss）
                 section_link, links = item
                 content += f'            <li id="toc_{section_link.uid}" style="{STYLE_LI}">\n'
-                content += (
-                    f'                <a class="section-link" href="{section_link.href}" '
-                    f'style="{STYLE_SECTION_LINK}">{ContentProcessor.render_text_with_emojis(section_link.title)}</a>\n'
-                )
+                link_html = f'<a class="section-link" href="{section_link.href}" style="{STYLE_SECTION_LINK}">{ContentProcessor.render_text_with_emojis(section_link.title)}</a>'
+                if not is_nav:
+                    link_html = f'<h2 style="{STYLE_H2}">{link_html}</h2>'
+                content += f'                {link_html}\n'
                 content += f'                <ol style="{STYLE_NESTED_OL}">\n'
                 for link in links:
                     content += (
@@ -880,6 +889,12 @@ body {
 }
 h1 {
     font-size: 1.5em;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+    color: #333;
+}
+h2 {
+    font-size: 1.3em;
     font-weight: bold;
     margin-bottom: 0.5em;
     color: #333;
@@ -986,14 +1001,24 @@ pre code {
 #toc li {
     margin: 0.8em 0;
 }
+#toc h2 {
+    font-size: 1.2em !important;
+    font-weight: bold !important;
+    margin-top: 0.4em !important;
+    margin-bottom: 0.2em !important;
+    padding: 0 !important;
+}
 #toc .section-link {
   font-weight: bold !important;
   font-size: 1.2em !important;
   color: #111111 !important;
   display: block;
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
   text-decoration: none !important;
+}
+#toc h2 .section-link {
+  font-size: 1em !important;
+  font-weight: inherit !important;
+  margin: 0 !important;
 }
 
 #toc .article-link { 

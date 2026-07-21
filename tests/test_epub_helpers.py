@@ -38,7 +38,7 @@ class TestEPUBHelpers:
         # 检查生成内容中是否有正确转义的标题、链接和返回目录片段
         content = divider.content
         assert "<title>测试大栏目 &amp; 频道</title>" in content
-        assert "<h1>测试大栏目 &amp; 频道</h1>" in content
+        assert "<h2>测试大栏目 &amp; 频道</h2>" in content
         assert 'href="contents.xhtml#toc_section_99"' in content
         assert "返回目录" in content
         assert 'class="toc-link"' in content
