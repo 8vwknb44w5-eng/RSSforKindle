@@ -79,7 +79,7 @@ def create_section_divider_page(
     <link rel="stylesheet" type="text/css" href="style/default.css"/>
 </head>
 <body>
-    <h1>{rendered_title}</h1>
+    <h2>{rendered_title}</h2>
     {toc_link}
 {articles_html}</body>
 </html>"""
