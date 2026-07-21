@@ -41,5 +41,7 @@ def test_webdav_uploader_success(mock_put, mock_get_config):
 def test_webdav_uploader_disabled(mock_get_config):
     mock_get_config.return_value = WebDavConfig(enabled=False)
     uploader = WebDavUploader()
+    uploader.logger = MagicMock()
     result = uploader.upload_epub("test.epub")
     assert result is False
+    uploader.logger.info.assert_called_once_with("WebDAV is not enabled, skip pushing.")

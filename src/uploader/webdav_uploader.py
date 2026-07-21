@@ -15,6 +15,7 @@ class WebDavUploader:
     def upload_epub(self, epub_path: str) -> bool:
         """上传 EPUB 文件"""
         if not self.config or not self.config.enabled:
+            self.logger.info("WebDAV is not enabled, skip pushing.")
             return False
 
         if not os.path.exists(epub_path):
