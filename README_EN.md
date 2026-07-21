@@ -192,6 +192,7 @@ For detailed documentation, refer to [docs/CONFIG.md](docs/CONFIG.md).
 | --- | --- | --- | --- |
 | `title` | object | ✓ | EPUB title & cover configuration |
 | `limit` | int | | Default maximum articles fetched per source (defaults to `15`) |
+| `load_images` | string | | Global image toggle: `"Y"` (default) or `"N"` (disable all images) |
 | `body` | array | ✓ | List of content sources |
 
 `title` Subfields:
@@ -211,6 +212,7 @@ For detailed documentation, refer to [docs/CONFIG.md](docs/CONFIG.md).
 | `type` | Source type (`rss`, `web`, `mail`, `trending`, or custom plugin type) |
 | `src` | URL, keyword query, or query path depending on type. Required for all types. |
 | `priority` | Ordering priority (higher values appear earlier). Defaults to `0`. Ties preserve config sequence. |
+| `load_images` | `Y` (default) to download images. `N` to strip all `<img>` tags for this source. |
 | `keep_link` | `Y` (default) preserves `<a>` tags. `N` strips tags and leaves plain text. |
 | `exclude` | Custom HTML cleanup rules. Supports `start`, `end`, and `exact` modes. |
 | `delete` | Comma-separated list of title exclusion keywords. Skips articles matching any keyword. |

@@ -201,7 +201,7 @@ class EPUBGenerator:
             book.spine = []
         spine = book.spine
 
-        chapters_to_process = []  # [(chapter, article)]
+        chapters_to_process = []  # [(chapter, article, source)]
 
         for source, articles, source_title in sections:
             # 在该分组的第一篇文章前插入章节分隔页，显示所属栏目标题
@@ -251,7 +251,7 @@ class EPUBGenerator:
                 )
                 chapter.content = chapter_content
 
-                chapters_to_process.append((chapter, article))
+                chapters_to_process.append((chapter, article, source))
                 book.add_item(chapter)
                 spine.append(chapter)  # 添加到 spine（阅读顺序）
                 chapter_id += 1
@@ -259,9 +259,25 @@ class EPUBGenerator:
         # 1. 收集所有章节中唯一的图片 URL 及其 referer (article.url)
         self.logger.info("Gathering all unique image URLs from chapters...")
         unique_images = {}  # image_src -> referer_url
-        for chapter, article in chapters_to_process:
+        
+        # 检查全局设置
+        global_load_images = self.config.load_images == 'Y'
+
+        for chapter, article, source in chapters_to_process:
             if not chapter.content:
                 continue
+                
+            # 检查源设置
+            source_load_images = source.load_images == 'Y'
+            
+            # 只要有一个为 'N'，就不加载图片（严格模式）或者以源设置为准？
+            # 通常应该是全局为开关，源为特定开关。
+            # 如果全局关闭，所有都关闭。如果全局开启，源可以关闭。
+            should_load = global_load_images and source_load_images
+            
+            if not should_load:
+                continue
+
             soup = BeautifulSoup(chapter.content, 'lxml')
             for img in soup.find_all('img'):
                 if img.get('class') and 'emoji' in img.get('class'):
@@ -293,7 +309,7 @@ class EPUBGenerator:
 
         # 3. 顺序更新每个章节的 HTML 并组装电子书
         self.logger.info("Updating image references sequentially and adding images to book...")
-        for chapter, article in chapters_to_process:
+        for chapter, article, source in chapters_to_process:
             if not chapter.content:
                 continue
                 
@@ -305,10 +321,18 @@ class EPUBGenerator:
 
             # 用于存储本章节已处理的图片 URL，避免在同一章节中重复处理
             url_to_filename = {}
+            
+            # 再次检查加载开关
+            should_load = global_load_images and (source.load_images == 'Y')
 
             for img in img_tags:
                 if img.get('class') and 'emoji' in img.get('class'):
                     continue
+                
+                if not should_load:
+                    img.decompose()
+                    continue
+
                 src, remote_attrs = self._extract_image_src(img)
                 
                 # 彻底移除所有干扰属性，防止残留远程链接

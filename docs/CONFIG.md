@@ -29,6 +29,7 @@
 |------|------|------|--------|------|
 | `title` | object | ✓ | 无 | 书名与封面配置（详见下方 title 说明） |
 | `limit` | int | | `15` | 每个内容源的抓取条数上限。应用于所有类型（rss/web/mail/trending/raindropio/weather） |
+| `load_images` | string | | `"Y"` | 全局图片开关。`"Y"`（默认）加载并压缩图片；`"N"` 禁用所有图片（不下载，且移除 HTML 中的 `<img>` 标签）。Emoji 渲染不受此开关影响 |
 | `body` | array | ✓ | 无 | 内容源列表（详见下方 body 说明） |
 
 可通过以下任一方式提供配置：
@@ -68,6 +69,7 @@
 | `src` | string | ✓ | 内容源地址，含义因 `type` 而异（详见下方各类型说明） |
 | `title` | string | | 自定义章节标题，显示在 EPUB 目录中。各类型的默认行为：`rss` → 使用 RSS feed 自身的标题；`web` → 优先从网页 `<title>`/`<h1>`/`og:title` 提取；`mail` → 无默认，建议手动指定；`trending` → `"热点分析: {src}"`；`raindropio` → 使用收藏夹原始标题；`weather` → `"{城市名}天气预报"` |
 | `priority` | int | | 优先级，数字越大在 EPUB 中越靠前。默认 `0`。相同值保持配置顺序 |
+| `load_images` | string | | 是否为该源加载图片。`"Y"`（默认）加载图片；`"N"` 禁用此源的图片。仅在全局 `load_images` 为 `"Y"` 时生效 |
 | `keep_link` | string | | 是否保留文章中的超链接。`"Y"`（默认）保留 `<a>` 标签，Kindle 上可点击跳转；`"N"` 移除所有 `<a>` 标签，只保留链接文字 |
 | `exclude` | array | | 内容过滤规则列表，在 **HTML 源码**上操作，保留标签结构。每条规则是一个 `{type, value}` 对象，按数组顺序依次执行（详见下方 exclude 说明） |
 | `delete` | string | | 按标题关键词**删除整篇文章**（逗号分隔多个关键词）。文章标题中包含任意一个关键词就跳过不收录 |

@@ -52,11 +52,13 @@ Optional variables: `CONFIG_JSON` (overrides file), `TESTMAIL_APP_API_KEY`, `OPE
     "text": "{Daily News {time}}", // supports {time} and </br> placeholders
     "img": "" // Custom cover image URL, fallback to Bing daily image if empty
   },
+  "load_images": "Y|N", // Global image toggle
   "body": [
     {
       "type": "rss|mail|web|trending|raindropio",
       "src": "URL, namespace[.tag], or keyword query",
       "priority": 10, // Higher priority items appear earlier in book (stable sorted)
+      "load_images": "Y|N", // Per-source image toggle
       "keep_link": "Y|N",
       "full_text": "Y|N", // RSS, RaindropIO only
       "exclude": [{"type": "start|end|exact", "value": "keyword"}],

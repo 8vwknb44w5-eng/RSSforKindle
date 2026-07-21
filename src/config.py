@@ -60,6 +60,7 @@ class ContentSource:
     delete: Optional[str] = None
     goal: Optional[str] = None
     model: Optional[str] = None
+    load_images: str = "Y"  # 是否加载图片 (Y/N)
     metadata: Optional[Dict[str, Any]] = None  # 额外的配置参数
 
     def __post_init__(self):
@@ -96,6 +97,7 @@ class Config:
     title: TitleConfig
     body: List[ContentSource]
     limit: int = 15  # 全局每源抓取上限
+    load_images: str = "Y"  # 全局是否加载图片 (Y/N)
     webdav: Optional[WebDavConfig] = None
 
     def get_sorted_sources(self) -> List[ContentSource]:
@@ -165,6 +167,7 @@ def _parse_config(data: Dict[str, Any]) -> Config:
                 delete=source_data.get("delete"),
                 goal=source_data.get("goal"),
                 model=source_data.get("model"),
+                load_images=source_data.get("load_images", "Y"),
                 metadata=source_data.get("metadata")
             )
             sources.append(source)
@@ -174,7 +177,8 @@ def _parse_config(data: Dict[str, Any]) -> Config:
     return Config(
         title=title_config,
         body=sources,
-        limit=data.get("limit", 15)
+        limit=data.get("limit", 15),
+        load_images=data.get("load_images", "Y")
     )
 
 
