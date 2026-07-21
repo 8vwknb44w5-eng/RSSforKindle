@@ -199,7 +199,9 @@ For detailed documentation, refer to [docs/CONFIG.md](docs/CONFIG.md).
 | Field | Description |
 | --- | --- |
 | `text` | Book title, supports `{time}` placeholder (formatted date) and `</br>` for line breaks |
-| `img` | Cover image URL. If left blank, it falls back to Bing Daily Wallpaper or solid colors |
+| `img` | Cover image URL. If left blank, it falls back to Bing Daily Wallpaper¹ or solid colors |
+
+> ¹ **Copyright Note**: Bing Daily Wallpapers are copyrighted by Microsoft and their respective photographers. Automated fetching by this program is intended strictly for personal, non-commercial use and research. Do not publicly distribute or share generated EPUBs containing these cover images.
 
 ### Content Source Common Fields
 
@@ -452,6 +454,12 @@ python3.11 scripts/update_workflow_secrets.py
 - `data/`: Ephemeral deduplication cache.
 
 ---
+
+## Disclaimer
+
+This project supports automatically fetching Bing Daily Wallpaper as a cover image, including cropping, scaling, and adding text/date overlays. The copyright for these wallpapers belongs entirely to Microsoft Corporation or their respective photographers.
+
+Users must comply with applicable national copyright laws and the Microsoft Services Agreement, **using the generated EPUB files strictly for personal, non-commercial study, reading, or research purposes**. Publicly sharing, redistributing, or commercializing generated e-books featuring copyrighted covers is strictly prohibited. Users assume all legal liabilities arising from any improper or copyright-infringing use; the project and its authors shall not be held liable for any claims.
 
 ## License
 
