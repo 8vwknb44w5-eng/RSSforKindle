@@ -18,10 +18,10 @@ Ought Gather 是一个 Python 自动化信息聚合工具。它从 RSS、网页�
 
 
 <p align="center">
-  <img src="img/Kindle_img0.jpg" alt="Kindle preview 0" width="24%">
-  <img src="img/Kindle_img1.jpg" alt="Kindle preview 1" width="24%">
-  <img src="img/Kindle_img2.jpg" alt="Kindle preview 2" width="24%">
-  <img src="img/Kindle_img3.jpg" alt="Kindle preview 3" width="24%">
+  <img src="img/Kindle_img0.jpg" alt="Kindle preview 0" width="23%">
+  <img src="img/Kindle_img1.jpg" alt="Kindle preview 1" width="23%">
+  <img src="img/Kindle_img2.jpg" alt="Kindle preview 2" width="23%">
+  <img src="img/Kindle_img3.jpg" alt="Kindle preview 3" width="23%">
 </p>
 
 ## 功能
