@@ -5,8 +5,12 @@
 
 import html as html_module
 import re
+import warnings
 from typing import Optional
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
+
+# 过滤掉 BeautifulSoup 的 "输入内容看起来像 URL 而非 HTML" 警告（因为我们在处理纯文本中的 Emoji 时，不可避免会解析 URL 标题或文本）
+warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 from src.config import ContentSource
 from src.fetchers.base import Article
