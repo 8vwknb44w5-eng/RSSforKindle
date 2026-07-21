@@ -28,6 +28,17 @@ class TrendingFetcher(BaseFetcher):
             "label": "目标 (goal)",
             "placeholder": "LLM 分析目标，例如: 分析最新的 AI 技术突破..."
         },
+        "metadata.language": {
+            "type": "select",
+            "label": "输出语言",
+            "options": [
+                {"value": "auto", "label": "根据时区自动识别"},
+                {"value": "Chinese", "label": "中文 (Chinese)"},
+                {"value": "English", "label": "英文 (English)"}
+            ],
+            "default": "auto",
+            "placeholder": "请选择输出语言"
+        },
         "metadata.search_topic": {
             "type": "select",
             "label": "搜索主题类型",
@@ -185,14 +196,34 @@ class TrendingFetcher(BaseFetcher):
 
     def _get_target_language(self) -> str:
         """
-        根据系统时区判断目标语言，默认中文
+        根据系统时区和配置判断目标语言，默认中文
         """
         try:
-            # 尝试获取时区名称 (e.g., 'CST', 'UTC', 'Asia/Shanghai')
-            tz_name = datetime.now().astimezone().tzname() or ""
-            
+            # 1. 优先读取配置中的 metadata.language
+            metadata = getattr(self.source, "metadata", {}) or {}
+            lang_opt = metadata.get("language", "auto")
+            if lang_opt in ["Chinese", "zh", "cn", "Chinese (中文)", "中文"]:
+                return "Chinese"
+            if lang_opt in ["English", "en"]:
+                return "English"
+
+            # 2. 如果是 auto，根据系统时区自动判断
+            now = datetime.now().astimezone()
+            tz_name = now.tzname() or ""
+            offset = now.utcoffset()
+            offset_seconds = offset.total_seconds() if offset is not None else 0
+
+            # 如果是 CST (China Standard Time), offset 是 +8 小时 (+28800 秒)
+            # 美国 Central Standard Time (CST) 是 -6 小时 (-21600 秒)
+            if tz_name == 'CST' and offset_seconds > 0:
+                return "Chinese"
+
             # 映射列表 (简单示例)
-            if tz_name in ['EST', 'EDT', 'CST', 'CDT', 'MST', 'MDT', 'PST', 'PDT', 'GMT', 'UTC', 'CET', 'CEST']:
+            english_tzs = ['EST', 'EDT', 'CDT', 'MST', 'MDT', 'PST', 'PDT', 'GMT', 'UTC', 'CET', 'CEST']
+            if tz_name == 'CST' and offset_seconds <= 0:
+                english_tzs.append('CST')
+
+            if tz_name in english_tzs:
                 return "English"
         except Exception:
             pass

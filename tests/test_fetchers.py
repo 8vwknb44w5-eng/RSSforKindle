@@ -620,6 +620,68 @@ class TestTrendingFetcher:
         assert "<li>项目二</li>" in html
         assert "</ul>" in html
 
+    @patch.dict("os.environ", {"OPENROUTER_API_KEY": "test_key_456"})
+    def test_get_target_language(self):
+        """测试 _get_target_language 功能"""
+        from src.config import ContentSource
+        
+        # 1. 测试 metadata.language 指定语言
+        source_cn = ContentSource(
+            type="trending", src="AI 趋势", goal="分析 AI",
+            metadata={"language": "Chinese"}
+        )
+        fetcher_cn = TrendingFetcher(source_cn)
+        assert fetcher_cn._get_target_language() == "Chinese"
+
+        source_en = ContentSource(
+            type="trending", src="AI 趋势", goal="分析 AI",
+            metadata={"language": "English"}
+        )
+        fetcher_en = TrendingFetcher(source_en)
+        assert fetcher_en._get_target_language() == "English"
+
+        # 2. 测试根据时区自动识别 (mock astimezone)
+        source_auto = ContentSource(
+            type="trending", src="AI 趋势", goal="分析 AI",
+            metadata={"language": "auto"}
+        )
+        fetcher_auto = TrendingFetcher(source_auto)
+
+        # Mock tzname and utcoffset to simulate China Standard Time (CST with positive offset)
+        mock_dt = MagicMock()
+        mock_dt.tzname.return_value = "CST"
+        mock_dt.utcoffset.return_value.total_seconds.return_value = 28800.0
+        
+        with patch("src.fetchers.trending_fetcher.datetime") as mock_datetime:
+            mock_datetime.now.return_value.astimezone.return_value = mock_dt
+            assert fetcher_auto._get_target_language() == "Chinese"
+
+        # Mock tzname and utcoffset to simulate US Central Standard Time (CST with negative offset)
+        mock_dt = MagicMock()
+        mock_dt.tzname.return_value = "CST"
+        mock_dt.utcoffset.return_value.total_seconds.return_value = -21600.0
+        
+        with patch("src.fetchers.trending_fetcher.datetime") as mock_datetime:
+            mock_datetime.now.return_value.astimezone.return_value = mock_dt
+            assert fetcher_auto._get_target_language() == "English"
+
+        # Mock other standard English timezones
+        for tz in ["EST", "GMT", "UTC"]:
+            mock_dt = MagicMock()
+            mock_dt.tzname.return_value = tz
+            mock_dt.utcoffset.return_value = None  # standard UTC might not have offset or can be mocked
+            with patch("src.fetchers.trending_fetcher.datetime") as mock_datetime:
+                mock_datetime.now.return_value.astimezone.return_value = mock_dt
+                assert fetcher_auto._get_target_language() == "English"
+
+        # Mock other timezones that default to Chinese
+        mock_dt = MagicMock()
+        mock_dt.tzname.return_value = "Asia/Shanghai"
+        mock_dt.utcoffset.return_value.total_seconds.return_value = 28800.0
+        with patch("src.fetchers.trending_fetcher.datetime") as mock_datetime:
+            mock_datetime.now.return_value.astimezone.return_value = mock_dt
+            assert fetcher_auto._get_target_language() == "Chinese"
+
 
 # =========================================================================
 # Plugin Registry / Dynamic Loading Tests

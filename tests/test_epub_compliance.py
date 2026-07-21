@@ -169,14 +169,6 @@ class TestEpubContent:
             except KeyError:
                 return zf.read(file_name).decode('utf-8')
 
-    def test_cover_not_empty(self, shared_epub):
-        """测试封面XHTML文件非空（已不再使用，跳过）"""
-        pytest.skip("已移除独立的封面XHTML页")
-
-    def test_cover_has_img_tag(self, shared_epub):
-        """测试封面XHTML包含img标签引用封面图片（已不再使用，跳过）"""
-        pytest.skip("已移除独立的封面XHTML页")
-
     def test_nav_has_landmarks_hidden(self, shared_epub):
         """测试nav.xhtml包含landmarks且设置为hidden（EPUB 3标准地标导航，仅供阅读器内部跳转使用）"""
         nav_html = self._read_epub_xhtml(shared_epub, 'nav.xhtml')
@@ -212,10 +204,6 @@ class TestEpubContent:
         assert 'xmlns="http://www.w3.org/1999/xhtml"' in chapter_html, "应包含XHTML命名空间"
 
         print(f"✓ 章节XHTML包含正确的命名空间")
-
-    def test_css_in_cover_is_escaped(self, shared_epub):
-        """测试封面XHTML中的CSS大括号正确转义（已不再使用，跳过）"""
-        pytest.skip("已移除独立的封面XHTML页")
 
     def test_html_entities_escaped_in_title(self, shared_epub):
         """测试标题中的HTML特殊字符被转义"""
