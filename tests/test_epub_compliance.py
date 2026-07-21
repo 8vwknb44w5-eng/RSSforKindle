@@ -28,13 +28,13 @@ from src.epub.generator import EPUBGenerator
 
 
 # =========================================================================
-# Fixture：生成一次EPUB，供整个测试类共享使用
+# Fixture：生成一次EPUB，供整个测试会话共享使用
 # =========================================================================
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="session")
 def shared_epub(request, tmp_path_factory):
     """
-    在测试类级别生成一次EPUB文件，供所有测试方法共享
+    在整个测试会话级别生成一次EPUB文件，供所有测试类及方法共享
 
     使用方法：在测试方法中添加参数 `shared_epub`，fixture会自动传入EPUB路径
     """
@@ -243,6 +243,19 @@ class TestEpubContent:
         assert '!important' in css_content, "default.css中的TOC样式应使用!important提高特异性"
 
         print(f"✓ default.css中成功包含了目录相关的强特异性排版规则")
+
+    def test_default_css_contains_code_styles(self, shared_epub):
+        """测试外部样式表default.css包含了行内代码和代码块样式定义"""
+        css_content = self._read_epub_xhtml(shared_epub, 'style/default.css')
+
+        # 验证包含 code, pre, 和 pre code 样式
+        assert 'code {' in css_content, "default.css应该定义行内代码样式 code"
+        assert 'pre {' in css_content, "default.css应该定义代码块容器样式 pre"
+        assert 'pre code {' in css_content, "default.css应该定义代码块内容样式 pre code"
+        assert 'display: inline !important' in css_content, "code 样式应该显式声明为 display: inline !important"
+        assert 'white-space: normal' in css_content, "code 样式应该声明 white-space: normal 以合并多余换行"
+
+        print(f"✓ default.css中成功包含了行内代码和代码块相关的排版规则")
 
 
 class TestEpubSpine:
