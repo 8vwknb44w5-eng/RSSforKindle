@@ -854,6 +854,14 @@
         <input type="number" id="global-limit" value="15" style="max-width: 120px;">
         <span class="hint">每个源的抓取条数上限，默认 15</span>
       </div>
+      <div class="form-row">
+        <label>加载图片</label>
+        <select id="global-load-images" style="max-width: 120px;">
+          <option value="Y">是 (Y)</option>
+          <option value="N">否 (N)</option>
+        </select>
+        <span class="hint">全局是否加载并压缩图片，默认开启</span>
+      </div>
     </div>
 
     <!-- Sources Section -->
@@ -1127,6 +1135,7 @@
         title: '',
         priority: '',
         keep_link: '',
+        load_images: 'Y',
         exclude: [],
         delete: ''
       };
@@ -1285,6 +1294,14 @@
             <input type="number" value="${s.priority}" oninput="updateField(${s._id}, 'priority', parseInt(this.value)||0)"
               style="max-width: 120px;">
             <span class="hint">越大越靠前</span>
+          </div>
+
+          <div class="form-row">
+            <label>加载图片</label>
+            <select onchange="updateField(${s._id}, 'load_images', this.value)" style="max-width: 120px;">
+              <option value="Y" ${s.load_images === 'Y' ? 'selected' : ''}>是 (Y)</option>
+              <option value="N" ${s.load_images === 'N' ? 'selected' : ''}>否 (N)</option>
+            </select>
           </div>
 
           <div class="form-row">
@@ -1605,18 +1622,21 @@
     // ---- JSON Generation ----
     function buildConfig() {
       const limitValue = parseInt(document.getElementById('global-limit').value) || 15;
+      const globalLoadImages = document.getElementById('global-load-images').value;
       const config = {
         title: {
           text: document.getElementById('title-text').value,
           img: document.getElementById('title-img').value
         },
         limit: limitValue,
+        load_images: globalLoadImages,
         body: sources.map(s => {
           const item = {
             type: s.type,
             src: s.src,
             title: s.title,
             priority: s.priority,
+            load_images: s.load_images,
             keep_link: s.keep_link
           };
 
@@ -1768,6 +1788,7 @@
       }
 
       document.getElementById('global-limit').value = config.limit || 15;
+      document.getElementById('global-load-images').value = config.load_images || 'Y';
 
       sources = [];
       if (Array.isArray(config.body)) {
@@ -1778,6 +1799,7 @@
           s.title = item.title || '';
           s.priority = item.priority || '';
           s.keep_link = item.keep_link || '';
+          s.load_images = item.load_images || 'Y';
           s.chop = item.chop || '';
           s.delete = item.delete || '';
           s.exclude = Array.isArray(item.exclude)
@@ -1850,6 +1872,13 @@
                   <input type="number" value="${s.priority}" 
                     oninput="updateFieldFromDrag(${s._id}, 'priority', parseInt(this.value)||0)" 
                     style="width: 70px;">
+                </div>
+                <div class="drag-prop-group">
+                  <label>图片</label>
+                  <select onchange="updateFieldFromDrag(${s._id}, 'load_images', this.value)">
+                    <option value="Y" ${s.load_images === 'Y' ? 'selected' : ''}>Y</option>
+                    <option value="N" ${s.load_images === 'N' ? 'selected' : ''}>N</option>
+                  </select>
                 </div>
               </div>
             </div>

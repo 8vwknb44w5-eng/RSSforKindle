@@ -4,6 +4,7 @@
     "img": ""
   },
   "limit": 15,
+  "load_images": "Y",
   "body": [
     {
       "type": "rss",
