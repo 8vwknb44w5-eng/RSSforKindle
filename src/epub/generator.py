@@ -871,6 +871,13 @@ class EPUBGenerator:
 
     def _add_style(self, book: epub.EpubBook):
         """添加样式"""
+        # 动态收集所有已注册 Fetcher 的自定义 CSS 样式
+        from src.fetchers.base import _registry
+        extra_css = ""
+        for name, cls in _registry.items():
+            if hasattr(cls, "custom_css") and cls.custom_css:
+                extra_css += f"\n/* --- Custom CSS from {cls.__name__} ({name}) --- */\n{cls.custom_css.strip()}\n"
+
         css = epub.EpubItem(
             uid="style",
             file_name="style/default.css",
@@ -904,12 +911,6 @@ h2 {
 .content img {
     max-width: 100%;
     height: auto;
-}
-
-.weather-item {
-    margin: 0;
-    padding: 0;
-    line-height: 0.8;
 }
 
 img.emoji {
@@ -1037,7 +1038,7 @@ pre code {
 #toc li ol li {
     margin: 0.4em 0;
 }
-"""
+""" + extra_css
         )
         book.add_item(css)
 

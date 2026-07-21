@@ -96,15 +96,10 @@ class TOCGenerator:
         if source.title:
             return source.title
 
-        # 2. 根据类型获取默认名称
-        if source.type == "rss":
-            return source_title or source.src
+        # 2. 动态委派给对应的 fetcher class 来获取其默认章节名称
+        from src.fetchers import get_fetcher_class
+        fetcher_class = get_fetcher_class(source.type)
+        if fetcher_class and hasattr(fetcher_class, "get_default_source_title"):
+            return fetcher_class.get_default_source_title(source, articles, source_title)
 
-        if source.type == "web":
-            # 使用页面标题（第一篇文章的标题）
-            if articles:
-                return articles[0].title
-            return source.src
-
-        # mail / trending / weather / raindropio：直接使用 source.src
         return source.src

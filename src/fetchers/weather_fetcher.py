@@ -23,6 +23,13 @@ class WeatherFetcher(BaseFetcher):
         "QWEATHER_KEY": "和风天气 API 密钥，用于获取天气数据。",
         "QWEATHER_HOST": "和风天气 API 主机地址。"
     }
+    custom_css = """
+.weather-item {
+    margin: 0;
+    padding: 0;
+    line-height: 0.8;
+}
+"""
 
     def __init__(self, source: ContentSource, global_limit: int = 15, max_retries: int = 3):
         super().__init__(source, global_limit=global_limit, max_retries=max_retries)

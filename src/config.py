@@ -75,9 +75,10 @@ class ContentSource:
         if not self.src:
             raise ValueError("src is required")
 
-        # 验证 trending 类型的特殊要求
-        if self.type == "trending" and not self.goal:
-            self.goal = "分析并总结相关热点信息"
+        # 动态委派给对应的 fetcher 进行验证与初始化修饰
+        fetcher_class = _registry.get(self.type)
+        if fetcher_class and hasattr(fetcher_class, "validate_source"):
+            fetcher_class.validate_source(self)
 
 
 @dataclass
