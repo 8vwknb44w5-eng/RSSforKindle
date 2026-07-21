@@ -939,6 +939,36 @@ nav li {
     margin: 0.8em 0;
 }
 
+/* 行内代码与代码块样式 */
+code {
+    font-family: monospace;
+    font-size: 0.85em;
+    background-color: #f5f5f5;
+    padding: 1px 3px;
+    border-radius: 3px;
+    display: inline !important;
+    white-space: normal;
+    word-wrap: break-word;
+    word-break: break-all;
+}
+pre {
+    background-color: #f5f5f5;
+    padding: 0.5em 0.8em;
+    border-radius: 4px;
+    margin: 0.8em 0;
+    overflow-x: auto;
+}
+pre code {
+    display: block !important;
+    background-color: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    font-size: 0.8em;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    word-break: normal;
+}
+
 /* 目录 (nav.xhtml) 专属样式 */
 #toc h1 {
     text-align: center;

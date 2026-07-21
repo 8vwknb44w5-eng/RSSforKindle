@@ -212,3 +212,25 @@ def sample_html():
 <p>这段应该被删除。</p>
 </body></html>
 """
+
+
+@pytest.fixture(autouse=True)
+def mock_cover_generator_network(monkeypatch):
+    """
+    全局 Mock CoverGenerator 的网络请求（获取 Bing 壁纸及下载自定义图片），
+    避免测试过程中产生真实的网络 I/O，显著提升测试运行速度。
+    """
+    from PIL import Image
+    from src.epub.cover import CoverGenerator
+
+    def mock_fetch_bing_wallpaper(self):
+        # 返回一个简单的 640x960 纯色 PIL Image
+        return Image.new('RGB', (640, 960), color=(240, 240, 240))
+
+    def mock_download_image(self, url):
+        # 同样返回一个简单的 640x960 纯色 PIL Image
+        return Image.new('RGB', (640, 960), color=(220, 220, 220))
+
+    monkeypatch.setattr(CoverGenerator, "_fetch_bing_wallpaper", mock_fetch_bing_wallpaper)
+    monkeypatch.setattr(CoverGenerator, "_download_image", mock_download_image)
+
