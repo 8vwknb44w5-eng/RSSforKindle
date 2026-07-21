@@ -604,7 +604,7 @@ class EPUBGenerator:
         content_html = f"""<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" epub:prefix="z3998: http://www.daisy.org/z3998/2012/vocab/structure/#" lang="zh" xml:lang="zh">
 <head>
-    <title>推送汇总</title>
+    <title>Summary / 推送汇总</title>
     <link rel="stylesheet" type="text/css" href="style/default.css"/>
     <style type="text/css">
         .summary-title {{
@@ -711,7 +711,7 @@ class EPUBGenerator:
         content_html = ContentProcessor.replace_emojis_with_images(content_html)
 
         chapter = epub.EpubHtml(
-            title="推送汇总",
+            title="Summary / 推送汇总",
             file_name="summary.xhtml"
         )
         chapter.content = content_html
@@ -719,7 +719,7 @@ class EPUBGenerator:
         book.add_item(chapter)
 
         # 添加到目录
-        book.toc.append(epub.Link("summary.xhtml", "推送汇总", "summary"))
+        book.toc.append(epub.Link("summary.xhtml", "Summary / 推送汇总", "summary"))
 
         # 添加到 spine（阅读顺序），保持为线性 (linear="yes")
         chapter.is_linear = True
