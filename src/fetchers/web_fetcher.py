@@ -3,6 +3,7 @@
 抓取单个网页并提取正文
 """
 
+from typing import List, Optional, Any
 from bs4 import BeautifulSoup
 import trafilatura
 
@@ -16,6 +17,12 @@ class WebFetcher(BaseFetcher):
     type_name = "web"
     src_placeholder = "网页 URL"
     config_schema = {}
+
+    @classmethod
+    def get_default_source_title(cls, source: Any, articles: List[Article], source_title: Optional[str] = None) -> str:
+        if articles:
+            return articles[0].title
+        return source.src
 
     def fetch(self) -> FetchResult:
         """

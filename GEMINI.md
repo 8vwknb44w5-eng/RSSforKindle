@@ -22,6 +22,11 @@ This guide provides compact developer instructions, architecture decisions, and 
   - `RSSFetcher`: feedparser. Supports `full_text=Y/N` for full article retrieval via trafilatura.
   - `WebFetcher`: Trafilatura with BeautifulSoup fallback.
   - `TrendingFetcher`: LLM generation via OpenRouter API.
+  - **Plugin Architecture Mandate (插件化规范)**:
+    - **Pluggable Registration**: All fetchers must be implemented as plugs under `src/fetchers/` and inherit from `BaseFetcher`. They register automatically via `__init_subclass__` and are resolved dynamically via `get_fetcher_class(source.type)`.
+    - **No Hardcoded References**: Do not add specialized, hardcoded, or conditional code for specific fetchers outside of the `src/fetchers/` directory (e.g., inside `src/config.py`, `src/epub/toc.py`, or `src/epub/generator.py`).
+    - **Decoupled Settings**: Keep fetcher-specific config validation and defaults inside the fetcher class or use generic hooks. Do not add fetcher-specific top-level properties to `ContentSource`. Use `metadata` for any extra parameters.
+    - **Decoupled Formatting/Styling**: Any specific title formatting, custom CSS classes (e.g., `.weather-item`), or custom layout requirements must be abstracted/encapsulated within the fetcher or handled via generic extensible hooks.
 - **Processors (`src/processors/`)**:
   - `content_processor`: Applies `keep_link`, `exclude`, and `delete` rules.
   - `image_processor`: Downloads/compresses images (≤250KB, max 640×960, JPEG Q75). Filters out small decorative assets (< 120×120).

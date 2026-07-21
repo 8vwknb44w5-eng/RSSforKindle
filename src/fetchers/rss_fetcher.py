@@ -3,7 +3,7 @@ RSS 抓取器模块
 解析 RSS/Atom 订阅源
 """
 
-from typing import List, Optional
+from typing import List, Optional, Any
 import feedparser
 import trafilatura
 
@@ -32,6 +32,10 @@ class RSSFetcher(BaseFetcher):
         }
     }
     MAX_ENTRIES = 50  # 每个 RSS 源最多抓取的条目数，可通过 metadata.limit 覆盖
+
+    @classmethod
+    def get_default_source_title(cls, source: Any, articles: List[Article], source_title: Optional[str] = None) -> str:
+        return source_title or source.src
 
     def fetch(self) -> FetchResult:
         """

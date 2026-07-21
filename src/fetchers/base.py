@@ -80,11 +80,28 @@ class BaseFetcher(ABC):
     src_placeholder: str = ""
     config_schema: dict = {}
     required_secrets: Dict[str, str] = {}
+    custom_css: str = ""
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         if hasattr(cls, "type_name") and cls.type_name:
             _registry[cls.type_name] = cls
+
+    @classmethod
+    def validate_source(cls, source: Any):
+        """
+        验证或修饰特定类型的 ContentSource 实例。
+        子类可重写该方法以提供特化的验证和配置默认值填充。
+        """
+        pass
+
+    @classmethod
+    def get_default_source_title(cls, source: Any, articles: List[Article], source_title: Optional[str] = None) -> str:
+        """
+        根据抓取器类型获取默认的章节标题。
+        默认返回 source.src。子类可提供特化的命名逻辑。
+        """
+        return source.src
 
 
     def __init__(self, source: ContentSource, global_limit: int = 15, max_retries: int = 3):

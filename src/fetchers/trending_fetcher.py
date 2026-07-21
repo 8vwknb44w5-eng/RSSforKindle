@@ -70,6 +70,12 @@ class TrendingFetcher(BaseFetcher):
         "TAVILY_API_KEY": "Tavily API 密钥，用于搜索热点信息。"
     }
 
+    @classmethod
+    def validate_source(cls, source: Any):
+        """验证/修饰 trending 类型的 ContentSource 实例。"""
+        if not source.goal:
+            source.goal = "分析并总结相关热点信息"
+
     def __init__(self, source: ContentSource, global_limit: int = 15, max_retries: int = 3):
         """
         初始化热点分析抓取器
