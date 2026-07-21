@@ -2,7 +2,7 @@
 
 ## 1. 项目概述 (Overview)
 **项目名称：** Ought Gather
-**项目目标：** 打造一个自动化的信息聚合聚合工具。将用户订阅的邮件 (Email Newsletter)、RSS 订阅源以及网页链接 (Web Links) 的内容提取出来，生成合规的 EPUB 电子书，并自动推送到用户的 Kindle 等设备。
+**项目目标：** 打造一个自动化的信息聚合聚合工具。将用户订阅的邮件 (Email Newsletter)、RSS 内容源以及网页链接 (Web Links) 的内容提取出来，生成合规的 EPUB 电子书，并自动推送到用户的 Kindle 等设备。
 **运行环境：** 依托 GitHub Actions 提供的服务实现自动化定时运行。
 
 ## 2. 凭证与全局配置 (Secrets & Config)
@@ -19,13 +19,13 @@
 *   格式支持：`自定义文本` 或动态时间，例如：`{Daily news {time}}`
 *   img属性：封面图片链接，流空则抓取bing wallpaper
 ### 3.2 内容块 (Body Block)
-一个数组，包含多个数据源对象。每个对象支持以下属性配置：
+一个数组，包含多个内容源对象。每个对象支持以下属性配置：
 
 | 属性字段 | 类型 / 可选值 | 说明 |
 | :--- | :--- | :--- |
-| `type` | `mail` / `rss` / `web` / `trending` | **必填**。定义当前任务的数据源类型。 |
+| `type` | `mail` / `rss` / `web` / `trending` | **必填**。定义当前任务的内容源类型。 |
 | `title` | String | 可选。自定义大章节标题。 |
-| `src` | String / URL | **必填**。对应数据源的链接、RSS 地址、邮箱、或是 Trending 的抓取目标/描述。 |
+| `src` | String / URL | **必填**。对应内容源的链接、RSS 地址、邮箱、或是 Trending 的抓取目标/描述。 |
 | `priority` | Integer | 优先级。数字越大优先级越高（用于最终排版）。 |
 | `keep_link` | `Y` / `N` | 是否保留原文中的超链接。 |
 | `full_text` | `Y` / `N` | （仅针对 RSS 有效）`Y`=抓取源网页正文；`N`=仅使用 RSS 摘要。 |
@@ -96,7 +96,7 @@
 *   **一级大章节（逻辑根目录）：**
     根据自定义的title属性或者
     *   `mail` 源：以 **邮件账号/邮箱地址** 命名。
-    *   `rss` 源：以 **源网站/订阅源名称** 命名。
+    *   `rss` 源：以 **源网站/内容源名称** 命名。
     *   `web` 源：以 **网页原始名称** 命名。
     *   `trending` 源：以 **大模型分析的主题名称** 命名。
 *   **二级小章节（正文页）：**
@@ -117,11 +117,11 @@
 ### 5.5 触发与发送机制 (Trigger & Sending Conditions)
 *   **内容增量校验（空书拦截）：** 
     *   每次 GitHub Actions 触发后，系统会自动检测是否有新抓取的内容。
-    *   **触发发送：** 必须满足**至少有一个数据源中产生了至少一条内容更新**这一条件。
+    *   **触发发送：** 必须满足**至少有一个内容源中产生了至少一条内容更新**这一条件。
     *   **静默退出（不发书）：** 若本次运行检测到没有任何新数据更新，系统将不进行 EPUB 合成，亦不执行邮件推送，以防止设备收到空白、重复或无意义的电子书。
 
 ## 6. Secrets 配置清单
-为了在 GitHub Actions 中安全地运行该自动化工作流，且不泄露您的个人账户隐私（如邮箱密码、API 密钥以及订阅源链接），您需要在 GitHub 仓库的 **Settings -> Secrets and variables -> Actions** 中添加以下 **Repository secrets**。
+为了在 GitHub Actions 中安全地运行该自动化工作流，且不泄露您的个人账户隐私（如邮箱密码、API 密钥以及内容源链接），您需要在 GitHub 仓库的 **Settings -> Secrets and variables -> Actions** 中添加以下 **Repository secrets**。
 
 ### 6.1 必需配置的 Secrets（核心发送模块）
 用于将生成的 EPUB 文件通过 SMTP 邮箱服务发送到您的 Kindle 设备。
@@ -151,4 +151,4 @@
 #### 6.2.3 隐私配置保护（建议配置）
 | Secret 名称 | 作用描述 | 说明 |
 | :--- | :--- | :--- |
-| `CONFIG_JSON` | 实际运行的完整 `config.json` 内容 | 由于仓库里只放公开的模板文件（Template），若您的 RSS 订阅源中含有私人 Token，或需要隐藏关注的网页链接，建议将**真实的订阅 JSON 配置**直接存放在此 Secret 中，运行时由 GitHub Actions 动态生成配置文件。 |
+| `CONFIG_JSON` | 实际运行的完整 `config.json` 内容 | 由于仓库里只放公开的模板文件（Template），若您的 RSS 内容源中含有私人 Token，或需要隐藏关注的网页链接，建议将**真实的订阅 JSON 配置**直接存放在此 Secret 中，运行时由 GitHub Actions 动态生成配置文件。 |

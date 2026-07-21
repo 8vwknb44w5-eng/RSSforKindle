@@ -31,7 +31,7 @@ class TOCGenerator:
 
         Args:
             sections: 章节列表 (ContentSource, Articles, source_title)
-                      source_title 为数据源的显示名称（如 RSS feed 标题）
+                      source_title 为内容源的显示名称（如 RSS feed 标题）
 
         Returns:
             List[TOCEntry]: 目录结构
@@ -74,11 +74,11 @@ class TOCGenerator:
         source_title: Optional[str] = None
     ) -> str:
         """
-        获取数据源的显示名称
+        获取内容源的显示名称
 
         优先级：
         1. 用户自定义 title（config 中的 title 字段）
-        2. 数据源特定名称：
+        2. 内容源特定名称：
            - rss: feed 标题（从 feedparser 提取）
            - web: 页面标题（第一篇文章的标题）
            - mail: namespace（source.src）
@@ -87,7 +87,7 @@ class TOCGenerator:
         Args:
             source: 内容源配置
             articles: 文章列表
-            source_title: 数据源显示名称（如 RSS feed 标题）
+            source_title: 内容源显示名称（如 RSS feed 标题）
 
         Returns:
             str: 章节显示名称

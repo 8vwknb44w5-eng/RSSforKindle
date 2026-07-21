@@ -134,8 +134,8 @@ class TestFullPipeline:
             os.remove(epub_path)
 
     def test_multiple_sources_to_epub(self, tmp_path):
-        """测试多个数据源 → EPUB 生成"""
-        # 1. 准备配置（多个数据源）
+        """测试多个内容源 → EPUB 生成"""
+        # 1. 准备配置（多个内容源）
         config_data = {
             "title": {
                 "text": "多源测试 {time}",

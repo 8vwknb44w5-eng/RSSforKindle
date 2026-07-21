@@ -1,6 +1,6 @@
 """
 RSS 抓取器模块
-解析 RSS/Atom 订阅源
+解析 RSS/Atom 内容源
 """
 
 from typing import List, Optional, Any

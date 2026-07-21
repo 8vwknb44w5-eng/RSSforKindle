@@ -23,7 +23,7 @@ from src.utils.logger import get_logger
 
 def get_fetcher(source: ContentSource, global_limit: int = 15) -> BaseFetcher:
     """
-    根据数据源类型获取对应的抓取器
+    根据内容源类型获取对应的抓取器
 
     Args:
         source: 内容源配置

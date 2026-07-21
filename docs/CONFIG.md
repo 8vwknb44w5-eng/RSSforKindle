@@ -4,7 +4,7 @@
 
 ## 概览
 
-`config.json` 包含三个顶层字段：`title`（书名与封面）、`limit`（全局抓取上限，可选）和 `body`（数据源列表）。
+`config.json` 包含三个顶层字段：`title`（书名与封面）、`limit`（全局抓取上限，可选）和 `body`（内容源列表）。
 
 ```json
 {
@@ -28,8 +28,8 @@
 | 字段 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|------|--------|------|
 | `title` | object | ✓ | 无 | 书名与封面配置（详见下方 title 说明） |
-| `limit` | int | | `15` | 每个数据源的抓取条数上限。应用于所有类型（rss/web/mail/trending/raindropio/weather） |
-| `body` | array | ✓ | 无 | 数据源列表（详见下方 body 说明） |
+| `limit` | int | | `15` | 每个内容源的抓取条数上限。应用于所有类型（rss/web/mail/trending/raindropio/weather） |
+| `body` | array | ✓ | 无 | 内容源列表（详见下方 body 说明） |
 
 可通过以下任一方式提供配置：
 
@@ -58,14 +58,14 @@
 
 ## 内容源配置 (body)
 
-`body` 是一个数组，每个元素定义一个数据源。EPUB 中的章节按 `priority` 降序排列（数值越大越靠前），相同优先级保持配置中的原始顺序（稳定排序）。
+`body` 是一个数组，每个元素定义一个内容源。EPUB 中的章节按 `priority` 降序排列（数值越大越靠前），相同优先级保持配置中的原始顺序（稳定排序）。
 
 ### 通用属性（所有 type 共用）
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `type` | string | ✓ | 数据源类型：`rss` / `web` / `mail` / `trending` / `raindropio` / `weather` |
-| `src` | string | ✓ | 数据源地址，含义因 `type` 而异（详见下方各类型说明） |
+| `type` | string | ✓ | 内容源类型：`rss` / `web` / `mail` / `trending` / `raindropio` / `weather` |
+| `src` | string | ✓ | 内容源地址，含义因 `type` 而异（详见下方各类型说明） |
 | `title` | string | | 自定义章节标题，显示在 EPUB 目录中。各类型的默认行为：`rss` → 使用 RSS feed 自身的标题；`web` → 优先从网页 `<title>`/`<h1>`/`og:title` 提取；`mail` → 无默认，建议手动指定；`trending` → `"热点分析: {src}"`；`raindropio` → 使用收藏夹原始标题；`weather` → `"{城市名}天气预报"` |
 | `priority` | int | | 优先级，数字越大在 EPUB 中越靠前。默认 `0`。相同值保持配置顺序 |
 | `keep_link` | string | | 是否保留文章中的超链接。`"Y"`（默认）保留 `<a>` 标签，Kindle 上可点击跳转；`"N"` 移除所有 `<a>` 标签，只保留链接文字 |
@@ -246,7 +246,7 @@
 
 ## 完整示例
 
-下面是一个使用了所有属性的完整 `config.json`，包含全部六种数据源：
+下面是一个使用了所有属性的完整 `config.json`，包含全部六种内容源：
 
 ```json
 {
@@ -254,7 +254,7 @@
     "text": "{每日综合新闻 {time}}",
     "img": ""
   },
-  "limit": 20,  // 每个数据源最多抓取 20 条
+  "limit": 20,  // 每个内容源最多抓取 20 条
   "body": [
     {
       "type": "weather",
@@ -334,7 +334,7 @@
 项目提供了一个可视化 HTML 配置编辑器，浏览器打开 `config-editor.html` 即可使用：
 
 - 启动时为空白状态，无默认配置，用户从零开始构建
-- 支持全部 6 种数据源类型（rss / mail / web / trending / raindropio / weather），自动切换专属字段
+- 支持全部 6 种内容源类型（rss / mail / web / trending / raindropio / weather），自动切换专属字段
 - 导入已有 config.json，添加 / 删除 / 排序内容源，管理排除规则和邮件、天气、RaindropIO 等专属参数
 - 通过下载或复制到剪贴板导出配置
 - 所有操作均有 toast 提示反馈

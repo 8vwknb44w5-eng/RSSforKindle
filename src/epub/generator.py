@@ -163,7 +163,7 @@ class EPUBGenerator:
 
         Returns:
             List[Tuple[ContentSource, List[Article], Optional[str]]]: 章节数据
-            第三个元素为数据源的显示名称（如 RSS feed 标题）
+            第三个元素为内容源的显示名称（如 RSS feed 标题）
         """
         # 按优先级排序（降序）
         sorted_results = sorted(
@@ -188,7 +188,7 @@ class EPUBGenerator:
         """
         添加章节 (EPUB 3.0 格式)
 
-        在每个不同数据源（大目录）的第一篇文章前插入一个章节分隔页，
+        在每个不同内容源（大目录）的第一篇文章前插入一个章节分隔页，
         让阅读时能清楚地感知进入了新的栏目/分组。
         """
         chapter_id = 0
@@ -674,7 +674,7 @@ class EPUBGenerator:
         <p class=\"intro-text\">Automated information aggregator delivering custom RSS, web articles, and newsletters to your Kindle as daily EPUBs
         <br>自动化信息聚合工具，支持将 RSS、网页、邮件等定时打包为 EPUB 推送至 Kindle。</p>
         <p class=\"intro-text\">For configuration or contribution, please visit the GitHub repository or use <code>config-editor.html</code>.<br>
-        想要添加或修改订阅源、查看系统说明或贡献代码，请访问 GitHub 项目主页，或使用内置的配置编辑器 <code>config-editor.html</code> 进行可视化管理。</p>
+        想要添加或修改内容源、查看系统说明或贡献代码，请访问 GitHub 项目主页，或使用内置的配置编辑器 <code>config-editor.html</code> 进行可视化管理。</p>
         <p class=\"intro-text\">GitHub: <a href=\"https://github.com/liusonwood/oughtgather\">https://github.com/liusonwood/oughtgather</a></p>
     </div>
     
@@ -682,7 +682,7 @@ class EPUBGenerator:
         <div class=\"card-title\">Statistics / 运行数据统计</div>
         <div class=\"stat-item\"><span class=\"stat-label\">Time / 推送时间：</span>{push_time}</div>
         <div class=\"stat-item\"><span class=\"stat-label\">Runtime / 运行耗时：</span>{runtime_str}</div>
-        <div class=\"stat-item\"><span class=\"stat-label\">Sources / 数据源总数：</span>{total_sources}</div>
+        <div class=\"stat-item\"><span class=\"stat-label\">Sources / 内容源总数：</span>{total_sources}</div>
         <div class=\"stat-item\"><span class=\"stat-label\">Articles / 新增文章：</span><span class=\"tag-success\">{total_articles}</span></div>
         <div class=\"stat-item\"><span class=\"stat-label\">Success / 成功抓取：</span><span class=\"tag-success\">{success_sources}</span></div>
         <div class=\"stat-item\"><span class=\"stat-label\">Failed / 抓取失败：</span><span class=\"tag-failed\">{failed_sources}</span></div>
@@ -694,7 +694,7 @@ class EPUBGenerator:
     </div>
     
     <div class="card">
-        <div class=\"card-title\"><span class=\"emoji\">🔌</span> Source Details / 订阅源详情</div>
+        <div class=\"card-title\"><span class=\"emoji\">🔌</span> Source Details / 内容源详情</div>
         <ul class="source-list">
             {source_details}
         </ul>
