@@ -416,6 +416,21 @@ python3.11 scripts/update_workflow_secrets.py
 
 ---
 
+## 📚 项目文档
+
+为了帮助您更好地安装、配置、运维及参与本项目，请参考以下全套文档：
+
+- **核心使用与配置**
+  - [📖 配置指南 (CONFIG.md)](docs/CONFIG.md) — 详细的 `config.json` 字段说明、过滤规则及各内容源配置。
+- **开发与社区**
+  - [🏗️ 项目设计文档 (design.md)](docs/design.md) — 系统架构、内容清洗流水线及 EPUB 生成逻辑。
+  - [✅ 测试指南 (TESTING.md)](docs/TESTING.md) — 如何运行自动化测试、编写测试用例及查看覆盖率。
+  - [🤝 贡献指南 (CONTRIBUTING.md)](.github/CONTRIBUTING.md) — 代码风格、插件化开发规范及时区约束。
+  - [📜 行为准则 (CODE_OF_CONDUCT.md)](.github/CODE_OF_CONDUCT.md) — 社区交流标准。
+  - [🛡️ 安全策略 (SECURITY.md)](.github/SECURITY.md) — 如何安全地报告漏洞及保护您的私有凭证。
+  - [🙋 支持指南 (SUPPORT.md)](.github/SUPPORT.md) — 获取技术支持的正式渠道。
+ 
+---
 
 ## 项目结构
 
