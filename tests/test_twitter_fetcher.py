@@ -154,7 +154,7 @@ class TestTwitterFetcher:
         # 验证第一个推文（转推）：
         rt_article = result.articles[0]
         assert rt_article.author == "@SomeoneElse"
-        assert rt_article.url == "https://x.com/WolframResearch/status/1111111111111111111"
+        assert rt_article.url == "https://x.com/SomeoneElse/status/1111111111111111111"
         assert "Check out this awesome post" in rt_article.title
 
         # 验证第二个推文（回复）：
@@ -234,6 +234,24 @@ class TestTwitterFetcher:
         assert len(result.articles) == 3
         for article in result.articles:
             assert "physics" not in article.title
+
+    @patch.object(TwitterFetcher, "_make_request")
+    def test_metadata_limit_override(self, mock_make_request):
+        """测试 metadata.limit 覆盖 global_limit"""
+        resp_success = MagicMock()
+        resp_success.text = MOCK_RSS_XML
+        mock_make_request.return_value = resp_success
+
+        source = ContentSource(
+            type="twitter",
+            src="WolframResearch",
+            metadata={"limit": 2}
+        )
+        fetcher = TwitterFetcher(source, global_limit=15)
+        result = fetcher.fetch()
+
+        assert result.success is True
+        assert len(result.articles) == 2
 
     @patch.object(TwitterFetcher, "_make_request")
     def test_xml_parse_failure(self, mock_make_request):

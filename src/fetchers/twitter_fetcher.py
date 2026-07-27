@@ -143,10 +143,11 @@ class TwitterFetcher(BaseFetcher):
                 result.source_title = channel_title.get_text(strip=True) if channel_title else f"X (@{username})"
 
             items = soup.find_all("item")
-            count = 0
+            metadata = self.source.metadata or {}
+            limit = int(metadata.get("limit", self.global_limit or 15))
 
             for item in items:
-                if self.global_limit and count >= self.global_limit:
+                if limit and len(result.articles) >= limit:
                     break
 
                 title_elem = item.find("title")
@@ -163,20 +164,21 @@ class TwitterFetcher(BaseFetcher):
 
                 # 4. 过滤条件：排除回复 (Replies)
                 if exclude_replies:
-                    if raw_title.startswith("R to @") or "R to @" in raw_title[:10]:
+                    if raw_title.startswith("R to @"):
                         continue
 
                 # 5. 过滤条件：排除转推 (Retweets)
                 if exclude_rts:
-                    if raw_title.startswith("RT by @") or "RT by @" in raw_title[:10]:
+                    if raw_title.startswith("RT by @"):
                         continue
 
-                # 6. 将节点链接转换为 x.com 官方原文链接
+                # 6. 将节点链接转换为 x.com 官方原文链接（如果是转推，则指向原推作者而非当前用户名）
+                tweet_username = author.lstrip("@") if author else username
                 if "/status/" in nitter_link:
                     status_id = nitter_link.split("/status/")[-1].split("#")[0]
-                    canonical_url = f"https://x.com/{username}/status/{status_id}"
+                    canonical_url = f"https://x.com/{tweet_username}/status/{status_id}"
                 else:
-                    canonical_url = f"https://x.com/{username}"
+                    canonical_url = f"https://x.com/{tweet_username}"
 
                 # 7. 提取推文中的图片资源
                 images = self._extract_images(content_html, base_url=used_instance)
@@ -207,7 +209,6 @@ class TwitterFetcher(BaseFetcher):
                 )
 
                 result.articles.append(article)
-                count += 1
 
             self.logger.info(f"成功获取 {len(result.articles)} 条来自 @{username} 的推文 (使用节点: {used_instance})")
             return result
