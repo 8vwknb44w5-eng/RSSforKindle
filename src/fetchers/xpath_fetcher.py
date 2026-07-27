@@ -48,7 +48,9 @@ class XPathListAutoFetcher(BaseFetcher):
             
             # 1. 访问并解析列表页面
             response = self._make_request(list_url)
-            tree = lxml_html.fromstring(response.content)
+            from src.utils.helpers import HTML_PARSING_LOCK
+            with HTML_PARSING_LOCK:
+                tree = lxml_html.fromstring(response.content)
             
             # 2. 提取、规范化并去重候选链接
             raw_links = tree.xpath(list_xpath)
@@ -88,7 +90,9 @@ class XPathListAutoFetcher(BaseFetcher):
                     # 提取元数据 (标题、作者、发布时间)
                     if raw_html:
                         try:
-                            meta = trafilatura.extract_metadata(raw_html, default_url=link)
+                            from src.utils.helpers import HTML_PARSING_LOCK
+                            with HTML_PARSING_LOCK:
+                                meta = trafilatura.extract_metadata(raw_html, default_url=link)
                             if meta:
                                 title = meta.title
                                 author = meta.author
@@ -98,7 +102,9 @@ class XPathListAutoFetcher(BaseFetcher):
                     
                     # 降级策略 A：若元数据未能成功提取标题，采用 BeautifulSoup 兜底提取
                     if not title and raw_html:
-                        soup = BeautifulSoup(raw_html, "lxml")
+                        from src.utils.helpers import HTML_PARSING_LOCK
+                        with HTML_PARSING_LOCK:
+                            soup = BeautifulSoup(raw_html, "lxml")
                         h1_node = soup.find("h1")
                         title = h1_node.get_text().strip() if h1_node else ""
                         if not title:
@@ -107,7 +113,9 @@ class XPathListAutoFetcher(BaseFetcher):
                     
                     # 降级策略 B：若基类 _fetch_full_text 未能通过 trafilatura 抽取到正文
                     if not content_html and raw_html:
-                        soup = BeautifulSoup(raw_html, "lxml")
+                        from src.utils.helpers import HTML_PARSING_LOCK
+                        with HTML_PARSING_LOCK:
+                            soup = BeautifulSoup(raw_html, "lxml")
                         possible_containers = [
                             soup.find("article"),
                             soup.find("div", class_="article"),

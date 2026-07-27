@@ -86,7 +86,9 @@ class WebFetcher(BaseFetcher):
         Returns:
             str: 标题
         """
-        soup = BeautifulSoup(html, 'lxml')
+        from src.utils.helpers import HTML_PARSING_LOCK
+        with HTML_PARSING_LOCK:
+            soup = BeautifulSoup(html, 'lxml')
 
         # 尝试多个可能的标题位置
         title = None

@@ -136,7 +136,9 @@ class TwitterFetcher(BaseFetcher):
 
         # 3. 解析抓取成功的 XML 数据
         try:
-            soup = BeautifulSoup(raw_xml, "xml")
+            from src.utils.helpers import HTML_PARSING_LOCK
+            with HTML_PARSING_LOCK:
+                soup = BeautifulSoup(raw_xml, "xml")
             channel = soup.find("channel")
             if channel:
                 channel_title = channel.find("title")
@@ -184,7 +186,9 @@ class TwitterFetcher(BaseFetcher):
                 images = self._extract_images(content_html, base_url=used_instance)
 
                 # 8. 生成干净纯文本标题
-                text_content = BeautifulSoup(content_html, "lxml").get_text(strip=True)
+                from src.utils.helpers import HTML_PARSING_LOCK
+                with HTML_PARSING_LOCK:
+                    text_content = BeautifulSoup(content_html, "lxml").get_text(strip=True)
                 formatted_title = text_content[:80] + ("..." if len(text_content) > 80 else "")
                 if not formatted_title:
                     formatted_title = f"X 推文由 @{username} 发布"

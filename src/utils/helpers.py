@@ -225,3 +225,10 @@ def format_date(date_str: str) -> str:
     except (ImportError, ValueError, TypeError, OverflowError):
         # 最后手段：返回原始字符串
         return date_str
+
+
+import threading
+
+# 全局 HTML 解析锁，确保 lxml, BeautifulSoup, trafilatura 在多线程环境下的安全性，防止 C 级 double free or corruption 崩溃
+HTML_PARSING_LOCK = threading.Lock()
+
