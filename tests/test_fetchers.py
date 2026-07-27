@@ -591,6 +591,88 @@ class TestTrendingFetcher:
             assert result.articles[0].author == "test-model"
 
     @patch.dict("os.environ", {"OPENROUTER_API_KEY": "test_key_456"})
+    @patch("httpx.Client")
+    def test_trending_fetcher_title_extraction(self, mock_client_cls):
+        """测试 TrendingFetcher 自动从首行 # 或 ## 提取标题并从正文中去除"""
+        # Case 1: # 开头
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "choices": [
+                {
+                    "message": {
+                        "content": "# Extracted Title 1\n\nThis is the main content body."
+                    }
+                }
+            ]
+        }
+        mock_client.post.return_value = mock_response
+        mock_client_cls.return_value = mock_client
+
+        source = ContentSource(type="trending", src="AI 趋势", goal="分析 AI")
+        fetcher = TrendingFetcher(source)
+        result = fetcher.fetch()
+        
+        assert result.success is True
+        assert result.articles[0].title == "Extracted Title 1"
+        assert "<h1>Extracted Title 1</h1>" not in result.articles[0].content
+        assert "This is the main content body." in result.articles[0].content
+
+        # Case 2: ## 开头
+        mock_response.json.return_value = {
+            "choices": [
+                {
+                    "message": {
+                        "content": "## Extracted Title 2\n\nThis is the second content body."
+                    }
+                }
+            ]
+        }
+        result = fetcher.fetch()
+        assert result.success is True
+        assert result.articles[0].title == "Extracted Title 2"
+        assert "<h2>Extracted Title 2</h2>" not in result.articles[0].content
+        assert "This is the second content body." in result.articles[0].content
+
+        # Case 3: ### 开头 (不应提取为标题，应保留在正文中)
+        mock_response.json.return_value = {
+            "choices": [
+                {
+                    "message": {
+                        "content": "### Header 3\n\nThis is the third content body."
+                    }
+                }
+            ]
+        }
+        result = fetcher.fetch()
+        assert result.success is True
+        assert result.articles[0].title == "热点分析: AI 趋势"  # 默认标题
+        assert "<h3>Header 3</h3>" in result.articles[0].content
+        assert "This is the third content body." in result.articles[0].content
+
+        # Case 4: 带自定义标题
+        source_with_title = ContentSource(type="trending", src="AI 趋势", goal="分析 AI", title="Custom Title Override")
+        fetcher_with_title = TrendingFetcher(source_with_title)
+        mock_response.json.return_value = {
+            "choices": [
+                {
+                    "message": {
+                        "content": "# Extracted Title 4\n\nContent details."
+                    }
+                }
+            ]
+        }
+        result = fetcher_with_title.fetch()
+        assert result.success is True
+        assert result.articles[0].title == "Custom Title Override"  # 自定义标题覆盖提取出的标题
+        assert "<h1>Extracted Title 4</h1>" not in result.articles[0].content  # 但第一行仍应从正文中去除
+        assert "Content details." in result.articles[0].content
+
+    @patch.dict("os.environ", {"OPENROUTER_API_KEY": "test_key_456"})
     def test_format_as_html_paragraphs(self, trending_source):
         """测试文本转 HTML 的段落处理"""
         fetcher = TrendingFetcher(trending_source)

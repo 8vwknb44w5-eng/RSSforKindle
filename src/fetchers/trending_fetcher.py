@@ -103,6 +103,7 @@ class TrendingFetcher(BaseFetcher):
 
         # 内部获取 Tavily 配置
         self.tavily_api_key = os.environ.get("TAVILY_API_KEY")
+        self._extracted_title = None
 
 
     def fetch(self) -> FetchResult:
@@ -131,6 +132,7 @@ class TrendingFetcher(BaseFetcher):
             search_results = self._search_web(self.source.src) if self.tavily_api_key else []
 
             # 2. 调用 LLM API
+            self._extracted_title = None
             analysis, model = self._call_llm_api(search_results)
 
             if not analysis:
@@ -140,7 +142,7 @@ class TrendingFetcher(BaseFetcher):
 
             # 创建文章对象（带当日时间戳，用于去重哈希计算）
             # 作者使用实际调用的 LLM 模型名称
-            title = self.source.title or f"热点分析: {self.source.src}"
+            title = self.source.title or self._extracted_title or f"热点分析: {self.source.src}"
             today = get_now().strftime("%Y-%m-%d")
             article = Article(
                 title=title,
@@ -305,7 +307,20 @@ class TrendingFetcher(BaseFetcher):
             # 提取响应内容
             content = data.get("choices", [{}])[0].get("message", {}).get("content")
             if content:
-                return self._format_as_html(content), model
+                # 检查第一行是否为 # 或 ## 开头
+                cleaned_content = self._remove_code_block_markers(content).strip()
+                lines = cleaned_content.splitlines()
+                if lines:
+                    first_line = lines[0].strip()
+                    # 匹配 # 或 ## 开头，排除 ### 或更长
+                    match = re.match(r'^#{1,2}(?![#])\s*(.+)$', first_line)
+                    if match:
+                        self._extracted_title = match.group(1).strip().rstrip('#').strip()
+                        # 从正文中去除第一行
+                        remaining_lines = lines[1:]
+                        cleaned_content = "\n".join(remaining_lines).strip()
+                
+                return self._format_as_html(cleaned_content), model
 
             self.logger.error(f"Unexpected API response: {data}")
             return None, model
