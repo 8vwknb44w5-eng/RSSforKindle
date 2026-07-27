@@ -4,49 +4,76 @@ from src.config import ContentSource
 from src.fetchers.twitter_fetcher import TwitterFetcher
 from src.fetchers.base import FetchResult
 
-# Mock RSS XML content
-MOCK_RSS_XML = """<?xml version="1.0" encoding="UTF-8"?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
-  <channel>
-    <title>Wolfram Research (@WolframResearch)</title>
-    <link>https://nitter.privacydev.net/WolframResearch</link>
-    <description>Twitter feed for Wolfram Research</description>
-    <language>en-us</language>
-    <item>
-      <title>RT by @WolframResearch: Check out this awesome post about physics! #science</title>
-      <description><![CDATA[Check out this awesome post about physics! <a href="https://nitter.privacydev.net/WolframResearch">#science</a>]]></description>
-      <link>https://nitter.privacydev.net/WolframResearch/status/1111111111111111111#m</link>
-      <guid>https://nitter.privacydev.net/WolframResearch/status/1111111111111111111#m</guid>
-      <pubDate>Mon, 27 Jul 2026 10:00:00 GMT</pubDate>
-      <dc:creator>@SomeoneElse</dc:creator>
-    </item>
-    <item>
-      <title>R to @some_user: We are working on a fix for that issue. Stay tuned!</title>
-      <description><![CDATA[We are working on a fix for that issue. <a href="https://nitter.privacydev.net/some_user">@some_user</a>]]></description>
-      <link>https://nitter.privacydev.net/WolframResearch/status/2222222222222222222#m</link>
-      <guid>https://nitter.privacydev.net/WolframResearch/status/2222222222222222222#m</guid>
-      <pubDate>Mon, 27 Jul 2026 11:00:00 GMT</pubDate>
-      <dc:creator>@WolframResearch</dc:creator>
-    </item>
-    <item>
-      <title>This is a normal tweet! Check our blog for the latest update. It is extremely long and will definitely exceed eighty characters in length to test the truncation logic of the TwitterFetcher.</title>
-      <description><![CDATA[This is a normal tweet! Check our blog for <img src="/pic/1.jpg" /> the latest update. <p>It is extremely long and will definitely exceed eighty characters in length to test the truncation logic of the TwitterFetcher.</p>]]></description>
-      <link>https://nitter.privacydev.net/WolframResearch/status/3333333333333333333#m</link>
-      <guid>https://nitter.privacydev.net/WolframResearch/status/3333333333333333333#m</guid>
-      <pubDate>Mon, 27 Jul 2026 12:00:00 GMT</pubDate>
-      <dc:creator>@WolframResearch</dc:creator>
-    </item>
-    <item>
-      <title></title>
-      <description><![CDATA[]]></description>
-      <link>https://nitter.privacydev.net/WolframResearch/status/4444444444444444444#m</link>
-      <guid>https://nitter.privacydev.net/WolframResearch/status/4444444444444444444#m</guid>
-      <pubDate>Mon, 27 Jul 2026 13:00:00 GMT</pubDate>
-      <dc:creator>@WolframResearch</dc:creator>
-    </item>
-  </channel>
-</rss>
-"""
+# Mock FxTwitter JSON response data
+MOCK_FXTWITTER_JSON = {
+    "code": 200,
+    "results": [
+        {
+            "type": "status",
+            "id": "1111111111111111111",
+            "url": "https://x.com/SomeoneElse/status/1111111111111111111",
+            "text": "Check out this awesome post about physics! #science",
+            "created_at": "Mon, 27 Jul 2026 10:00:00 GMT",
+            "author": {
+                "name": "Someone Else",
+                "screen_name": "SomeoneElse"
+            },
+            "replying_to": None,
+            "reposted_by": {
+                "screen_name": "WolframResearch"
+            },
+            "media": {}
+        },
+        {
+            "type": "status",
+            "id": "2222222222222222222",
+            "url": "https://x.com/WolframResearch/status/2222222222222222222",
+            "text": "We are working on a fix for that issue. Stay tuned!",
+            "created_at": "Mon, 27 Jul 2026 11:00:00 GMT",
+            "author": {
+                "name": "Wolfram",
+                "screen_name": "WolframResearch"
+            },
+            "replying_to": {
+                "screen_name": "some_user"
+            },
+            "reposted_by": None,
+            "media": {}
+        },
+        {
+            "type": "status",
+            "id": "3333333333333333333",
+            "url": "https://x.com/WolframResearch/status/3333333333333333333",
+            "text": "This is a normal tweet! Check our blog for the latest update. It is extremely long and will definitely exceed eighty characters in length to test the truncation logic of the TwitterFetcher.",
+            "created_at": "Mon, 27 Jul 2026 12:00:00 GMT",
+            "author": {
+                "name": "Wolfram",
+                "screen_name": "WolframResearch"
+            },
+            "replying_to": None,
+            "reposted_by": None,
+            "media": {
+                "photos": [
+                    {"url": "https://pbs.twimg.com/media/test.jpg"}
+                ]
+            }
+        },
+        {
+            "type": "status",
+            "id": "4444444444444444444",
+            "url": "https://x.com/WolframResearch/status/4444444444444444444",
+            "text": "",
+            "created_at": "Mon, 27 Jul 2026 13:00:00 GMT",
+            "author": {
+                "name": "Wolfram",
+                "screen_name": "WolframResearch"
+            },
+            "replying_to": None,
+            "reposted_by": None,
+            "media": {}
+        }
+    ]
+}
 
 
 class TestTwitterFetcher:
@@ -72,155 +99,117 @@ class TestTwitterFetcher:
         assert fetcher._extract_username(input_src) == expected_username
 
     def test_fetch_invalid_username(self):
-        """测试用户名无效时，fetch 应该失败"""
+        """测试输入的 src 无法解析出用户名时的错误处理"""
         source = ContentSource(type="twitter", src="https://x.com")
         fetcher = TwitterFetcher(source)
         result = fetcher.fetch()
+
         assert result.success is False
-        assert "src 无法识别出有效的 X/Twitter 用户名" in result.error
+        assert "无法识别出有效的" in result.error
 
     @patch.object(TwitterFetcher, "_make_request")
-    def test_fetch_all_nodes_fail(self, mock_make_request):
-        """测试所有候选 Nitter/xcancel 节点都抓取失败的情况"""
-        # 模拟所有请求均抛出异常
-        mock_make_request.side_effect = Exception("Connection refused")
+    def test_fetch_all_fail(self, mock_make_request):
+        """测试 FxTwitter API 失败时的错误处理"""
+        mock_make_request.side_effect = Exception("API endpoint is completely down")
 
         source = ContentSource(type="twitter", src="WolframResearch")
         fetcher = TwitterFetcher(source)
         result = fetcher.fetch()
 
         assert result.success is False
-        assert "所有候选 Nitter/xcancel 节点均抓取失败" in result.error
-        assert "Connection refused" in result.error
-
-    @patch.object(TwitterFetcher, "_make_request")
-    def test_fetch_custom_instance_priority_and_failover(self, mock_make_request):
-        """测试自定义节点优先抓取，且在首个节点失败时自动无缝切换到备用节点"""
-        # 1. 模拟第一个自定义节点访问报错
-        # 2. 模拟第二个节点返回不合规 HTML
-        # 3. 模拟第三个节点成功返回 XML
-        resp_fail_format = MagicMock()
-        resp_fail_format.text = "<html>only works inside an rss client</html>"
-
-        resp_success = MagicMock()
-        resp_success.text = MOCK_RSS_XML
-
-        mock_make_request.side_effect = [
-            Exception("Custom instance down"),  # 自定义节点报错
-            resp_fail_format,                  # 第一个默认节点不合规
-            resp_success                       # 第二个默认节点成功
-        ]
-
-        # 自定义节点无 https 前缀，验证自动拼接和尾部斜杠清理
-        source = ContentSource(
-            type="twitter",
-            src="WolframResearch",
-            metadata={"nitter_instance": "my-nitter.com/"}
-        )
-        fetcher = TwitterFetcher(source)
-        result = fetcher.fetch()
-
-        assert result.success is True
-        assert len(result.articles) > 0
-        # 验证调用详情：
-        # 第一个请求应该是自定义节点 my-nitter.com
-        assert mock_make_request.call_args_list[0][0][0] == "https://my-nitter.com/WolframResearch/rss"
-        # 最后的 article metadata 应该记录了真正抓取成功的节点
-        assert result.articles[0].metadata["instance_used"] in fetcher.DEFAULT_NODES
+        assert "API 抓取错误" in result.error
 
     @patch.object(TwitterFetcher, "_make_request")
     def test_fetch_filtering_and_parsing(self, mock_make_request):
         """测试推文解析、排除回复、排除转推、URL 转换、图片提取以及标题截断和兜底"""
-        resp_success = MagicMock()
-        resp_success.text = MOCK_RSS_XML
-        mock_make_request.return_value = resp_success
+        resp = MagicMock()
+        resp.json.return_value = MOCK_FXTWITTER_JSON
+        mock_make_request.return_value = resp
 
         # 默认不排除回复和转推
         source = ContentSource(
             type="twitter",
             src="WolframResearch",
-            metadata={
-                "exclude_replies": False,
-                "exclude_rts": False
-            }
+            metadata={"exclude_replies": False, "exclude_rts": False}
         )
         fetcher = TwitterFetcher(source)
         result = fetcher.fetch()
 
         assert result.success is True
-        assert result.source_title == "Wolfram Research (@WolframResearch)"
+        # 全部4条推文都应该被获取
         assert len(result.articles) == 4
 
-        # 验证第一个推文（转推）：
+        # 1. 验证转推 (Repost/Retweet)
         rt_article = result.articles[0]
         assert rt_article.author == "@SomeoneElse"
         assert rt_article.url == "https://x.com/SomeoneElse/status/1111111111111111111"
-        assert "Check out this awesome post" in rt_article.title
 
-        # 验证第二个推文（回复）：
+        # 2. 验证回复 (Reply)
         reply_article = result.articles[1]
         assert reply_article.author == "@WolframResearch"
-        assert reply_article.url == "https://x.com/WolframResearch/status/2222222222222222222"
+        assert "working on a fix" in reply_article.content
 
-        # 验证第三个推文（普通长文）：
+        # 3. 验证正常推文、图片以及标题截断逻辑 (正常标题不含换行符，且截断到最多 80 个字符 + ...)
         normal_article = result.articles[2]
-        assert len(normal_article.title) <= 83  # 80 chars + "..."
+        assert len(normal_article.title) == 83  # 80 chars + "..."
         assert normal_article.title.endswith("...")
-        # 图片相对地址转换为绝对地址
-        assert normal_article.images == [f"{fetcher.DEFAULT_NODES[0]}/pic/1.jpg"]
+        assert len(normal_article.images) == 1
+        assert normal_article.images[0] == "https://pbs.twimg.com/media/test.jpg"
+        assert '<img src="https://pbs.twimg.com/media/test.jpg"' in normal_article.content
 
-        # 验证第四个推文（空正文，自动兜底标题）：
-        empty_article = result.articles[3]
-        assert empty_article.title == "X 推文由 @WolframResearch 发布"
+        # 4. 验证空文字推文的标题兜底逻辑
+        empty_text_article = result.articles[3]
+        assert empty_text_article.title == "X 推文由 @WolframResearch 发布"
 
     @patch.object(TwitterFetcher, "_make_request")
     def test_exclude_replies_and_rts(self, mock_make_request):
         """测试开启 exclude_replies 和 exclude_rts 时的过滤效果"""
-        resp_success = MagicMock()
-        resp_success.text = MOCK_RSS_XML
-        mock_make_request.return_value = resp_success
+        resp = MagicMock()
+        resp.json.return_value = MOCK_FXTWITTER_JSON
+        mock_make_request.return_value = resp
 
+        # 同时排除回复和转推
         source = ContentSource(
             type="twitter",
             src="WolframResearch",
-            metadata={
-                "exclude_replies": True,
-                "exclude_rts": True
-            }
+            metadata={"exclude_replies": True, "exclude_rts": True}
         )
         fetcher = TwitterFetcher(source)
         result = fetcher.fetch()
 
         assert result.success is True
-        # 原本4条，排除了1条RT和1条Reply，应当剩余2条
+        # 原本4条，1条是转推 (reposted_by != None)，1条是回复 (replying_to != None)，
+        # 排除后应该仅剩 2 条
         assert len(result.articles) == 2
         for article in result.articles:
-            assert not article.title.startswith("RT by @")
-            assert not article.title.startswith("R to @")
+            # 验证排除回复
+            assert "working on a fix" not in article.content
+            # 验证排除转推
+            assert "Check out this awesome post about physics" not in article.content
 
     @patch.object(TwitterFetcher, "_make_request")
     def test_global_limit(self, mock_make_request):
-        """测试全局条数限制"""
-        resp_success = MagicMock()
-        resp_success.text = MOCK_RSS_XML
-        mock_make_request.return_value = resp_success
+        """测试 global_limit 限制抓取条数的功能"""
+        resp = MagicMock()
+        resp.json.return_value = MOCK_FXTWITTER_JSON
+        mock_make_request.return_value = resp
 
-        # 设置 global_limit 为 1
         source = ContentSource(type="twitter", src="WolframResearch")
-        fetcher = TwitterFetcher(source, global_limit=1)
+        # 限制最多获取 2 条
+        fetcher = TwitterFetcher(source, global_limit=2)
         result = fetcher.fetch()
 
         assert result.success is True
-        assert len(result.articles) == 1
+        assert len(result.articles) == 2
 
     @patch.object(TwitterFetcher, "_make_request")
     def test_delete_keywords_filtering(self, mock_make_request):
         """测试 delete 过滤关键字功能"""
-        resp_success = MagicMock()
-        resp_success.text = MOCK_RSS_XML
-        mock_make_request.return_value = resp_success
+        resp = MagicMock()
+        resp.json.return_value = MOCK_FXTWITTER_JSON
+        mock_make_request.return_value = resp
 
-        # 配置过滤含有 "physics" 的推文（转推命中）
+        # 配置过滤含有 "physics" 的推文
         source = ContentSource(
             type="twitter",
             src="WolframResearch",
@@ -238,35 +227,17 @@ class TestTwitterFetcher:
     @patch.object(TwitterFetcher, "_make_request")
     def test_metadata_limit_override(self, mock_make_request):
         """测试 metadata.limit 覆盖 global_limit"""
-        resp_success = MagicMock()
-        resp_success.text = MOCK_RSS_XML
-        mock_make_request.return_value = resp_success
+        resp = MagicMock()
+        resp.json.return_value = MOCK_FXTWITTER_JSON
+        mock_make_request.return_value = resp
 
         source = ContentSource(
             type="twitter",
             src="WolframResearch",
-            metadata={"limit": 2}
+            metadata={"limit": 1}
         )
         fetcher = TwitterFetcher(source, global_limit=15)
         result = fetcher.fetch()
 
         assert result.success is True
-        assert len(result.articles) == 2
-
-    @patch.object(TwitterFetcher, "_make_request")
-    def test_xml_parse_failure(self, mock_make_request):
-        """测试 XML 损坏导致 BeautifulSoup 解析报错时的异常处理"""
-        resp_corrupted = MagicMock()
-        resp_corrupted.text = "<rss><channel><item>不完整闭合"
-        mock_make_request.return_value = resp_corrupted
-
-        source = ContentSource(type="twitter", src="WolframResearch")
-        fetcher = TwitterFetcher(source)
-        result = fetcher.fetch()
-
-        # xml 解析容错性高，BeautifulSoup xml parser 可能仍然返回成功（但没有 channel 或 items），
-        # 或者在更极端的情况下报错。不管怎样，我们通过 mock 让 soup.find 报错来模拟。
-        with patch("src.fetchers.twitter_fetcher.BeautifulSoup", side_effect=Exception("Parsing failed")):
-            result = fetcher.fetch()
-            assert result.success is False
-            assert "XML 解析错误" in result.error
+        assert len(result.articles) == 1
