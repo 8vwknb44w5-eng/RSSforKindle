@@ -980,6 +980,29 @@
     },
     "required_secrets": {}
   },
+  "telegram": {
+    "src_placeholder": "Telegram 频道 ID, 例如: durov",
+    "schema": {
+      "metadata.rsshub_host": {
+        "type": "text",
+        "label": "RSSHub 实例地址",
+        "placeholder": "rsshub.rssforever.com",
+        "hint": "默认使用 rsshub.rssforever.com"
+      },
+      "metadata.limit": {
+        "type": "number",
+        "label": "抓取条目数",
+        "placeholder": "15"
+      },
+      "metadata.route_params": {
+        "type": "text",
+        "label": "额外路由参数",
+        "placeholder": "showEmoji=1",
+        "hint": "RSSHub Telegram 路由的额外参数"
+      }
+    },
+    "required_secrets": {}
+  },
   "trending": {
     "src_placeholder": "关键词, 例如: 人工智能最新发展趋势",
     "schema": {
@@ -1055,6 +1078,45 @@
       "OPENROUTER_MODEL": "使用的 LLM 模型名称。",
       "TAVILY_API_KEY": "Tavily API 密钥，用于搜索热点信息。"
     }
+  },
+  "twitter": {
+    "src_placeholder": "输入 X 用户名、x.com 链接或 xcancel.com RSS 链接 (例如 WolframResearch 或 https://xcancel.com/WolframResearch/rss)",
+    "schema": {
+      "metadata.nitter_instance": {
+        "type": "text",
+        "label": "首选 Nitter / xcancel 节点域名",
+        "placeholder": "https://xcancel.com (留空则按内置默认节点自动重试切换)"
+      },
+      "metadata.exclude_replies": {
+        "type": "select",
+        "label": "排除回复推文 (Replies)",
+        "options": [
+          {
+            "label": "否 (保留回复)",
+            "value": false
+          },
+          {
+            "label": "是 (仅保留独立推文)",
+            "value": true
+          }
+        ]
+      },
+      "metadata.exclude_rts": {
+        "type": "select",
+        "label": "排除转推 (Retweets)",
+        "options": [
+          {
+            "label": "否 (保留转推)",
+            "value": false
+          },
+          {
+            "label": "是 (仅保留原推)",
+            "value": true
+          }
+        ]
+      }
+    },
+    "required_secrets": {}
   },
   "weather": {
     "src_placeholder": "城市名称，例如: 北京 或 Shanghai",
