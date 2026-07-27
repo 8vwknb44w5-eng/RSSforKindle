@@ -584,7 +584,7 @@ class TestTrendingFetcher:
             type="trending", src="AI 趋势",
             goal="分析 AI",
         )
-        with patch("src.fetchers.trending_fetcher.TrendingFetcher._call_llm_api", return_value=("<p>内容</p>", "test-model")):
+        with patch("src.fetchers.trending_fetcher.TrendingFetcher._call_llm_api", return_value=("<p>内容</p>", "test-model", None)):
             fetcher = TrendingFetcher(source)
             result = fetcher.fetch()
             assert result.articles[0].title == "热点分析: AI 趋势"
