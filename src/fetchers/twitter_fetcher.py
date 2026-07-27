@@ -49,8 +49,6 @@ class TwitterFetcher(BaseFetcher):
             parsed = urlparse(src)
             path_parts = [p for p in parsed.path.split("/") if p]
             if path_parts:
-                if path_parts[-1].lower() == "rss" and len(path_parts) >= 2:
-                    return path_parts[-2].lstrip("@")
                 return path_parts[0].lstrip("@")
             return ""
         return src.lstrip("@")
