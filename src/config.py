@@ -81,6 +81,21 @@ class ContentSource:
         if fetcher_class and hasattr(fetcher_class, "validate_source"):
             fetcher_class.validate_source(self)
 
+    def __hash__(self) -> int:
+        """自定义哈希，仅使用不可变字段，避免 list/dict 导致的 unhashable 错误"""
+        return hash((
+            self.type,
+            self.src,
+            self.priority,
+            self.title,
+            self.keep_link,
+            self.full_text,
+            self.delete,
+            self.goal,
+            self.model,
+            self.load_images,
+        ))
+
 
 @dataclass
 class WebDavConfig:
