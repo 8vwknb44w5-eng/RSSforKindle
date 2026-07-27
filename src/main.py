@@ -163,7 +163,7 @@ def main():
                 try:
                     result, records = future.result()
                     results.append(result)
-                    raw_counts[source] = len(result.articles) if result.success else 0
+                    raw_counts[id(source)] = len(result.articles) if result.success else 0
 
                     short_src = truncate_url(source.src, 40)
                     prefix = f"{source.type} | {short_src}"
@@ -176,7 +176,7 @@ def main():
                     error_log.append(f"[{source.type}] {source.src}: {str(e)}")
                     res = FetchResult(source=source, articles=[], success=False, error=str(e))
                     results.append(res)
-                    raw_counts[source] = 0
+                    raw_counts[id(source)] = 0
 
         # 3. 处理结果（去重、内容过滤处理）
         log_stage(3, 5, "去重与内容过滤处理")
@@ -219,7 +219,7 @@ def main():
         summary_rows = []
         for idx, res in enumerate(processed_results, start=1):
             s = res.source
-            raw_c = raw_counts.get(s, len(res.articles) if res.success else 0)
+            raw_c = raw_counts.get(id(s), len(res.articles) if res.success else 0)
             new_c = len(res.articles) if res.success else 0
             if not res.success:
                 status = "FAILED"

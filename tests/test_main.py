@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from src.main import main
+from src.config import ContentSource
 
 @patch("src.main.load_config")
 @patch("src.main.DedupTracker")
@@ -24,7 +25,7 @@ def test_main_no_new_content(
     mock_logger = MagicMock()
     mock_get_logger.return_value = mock_logger
     mock_config = MagicMock()
-    mock_config.body = [MagicMock()]
+    mock_config.body = [ContentSource(type="rss", src="https://example.com/rss")]
     mock_load_config.return_value = mock_config
     
     mock_has_new.return_value = False
@@ -96,7 +97,7 @@ def test_main_success(
     mock_get_logger.return_value = mock_logger
     
     mock_config = MagicMock()
-    mock_config.body = [MagicMock()]
+    mock_config.body = [ContentSource(type="rss", src="https://example.com/rss")]
     mock_config.title.get_plain_text.return_value = "Test Title"
     mock_load_config.return_value = mock_config
     
