@@ -191,14 +191,16 @@ class RSSFetcher(BaseFetcher):
             raw_html = response.text
 
             # 使用 trafilatura 提取正文
-            content = trafilatura.extract(
-                raw_html,
-                include_comments=False,
-                include_tables=True,
-                include_images=True,
-                include_links=True,
-                output_format="html"
-            )
+            from src.utils.helpers import HTML_PARSING_LOCK
+            with HTML_PARSING_LOCK:
+                content = trafilatura.extract(
+                    raw_html,
+                    include_comments=False,
+                    include_tables=True,
+                    include_images=True,
+                    include_links=True,
+                    output_format="html"
+                )
 
             if content:
                 # trafilatura 在 output_format="html" 时会将 <img> 转换为

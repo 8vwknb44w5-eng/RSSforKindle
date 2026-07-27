@@ -333,3 +333,35 @@ class TestFormatDate:
         """仅日期格式（视为 UTC+0 转北京时间）"""
         result = format_date("2026-06-14")
         assert result == "2026-06-14 08:00"
+
+
+# =========================================================================
+# HTML_PARSING_LOCK 测试
+# =========================================================================
+
+def test_html_parsing_lock():
+    """测试 HTML_PARSING_LOCK 是否正常工作并且可用于并发操作"""
+    import threading
+    from src.utils.helpers import HTML_PARSING_LOCK
+    from bs4 import BeautifulSoup
+
+    assert hasattr(HTML_PARSING_LOCK, "acquire") and hasattr(HTML_PARSING_LOCK, "release")
+
+    errors = []
+    
+    def worker():
+        try:
+            with HTML_PARSING_LOCK:
+                soup = BeautifulSoup("<p>hello <b>world</b></p>", "lxml")
+                assert soup.b.text == "world"
+        except Exception as e:
+            errors.append(e)
+
+    threads = [threading.Thread(target=worker) for _ in range(10)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert len(errors) == 0
+

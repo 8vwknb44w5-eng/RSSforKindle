@@ -170,7 +170,9 @@ class MailFetcher(BaseFetcher):
         if not html:
             return []
 
-        soup = BeautifulSoup(html, 'lxml')
+        from src.utils.helpers import HTML_PARSING_LOCK
+        with HTML_PARSING_LOCK:
+            soup = BeautifulSoup(html, 'lxml')
         images = []
 
         for img in soup.find_all('img'):
@@ -218,7 +220,9 @@ class MailFetcher(BaseFetcher):
 
         try:
             # 优先使用 lxml，因为它对 XHTML 的支持更好
-            soup = BeautifulSoup(html, 'lxml')
+            from src.utils.helpers import HTML_PARSING_LOCK
+            with HTML_PARSING_LOCK:
+                soup = BeautifulSoup(html, 'lxml')
 
             # 移除所有不合法的属性名
             for tag in soup.find_all(True):

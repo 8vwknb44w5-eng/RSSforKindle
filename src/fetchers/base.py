@@ -248,7 +248,9 @@ class BaseFetcher(ABC):
             return []
 
         from bs4 import BeautifulSoup
-        soup = BeautifulSoup(html, 'lxml')
+        from src.utils.helpers import HTML_PARSING_LOCK
+        with HTML_PARSING_LOCK:
+            soup = BeautifulSoup(html, 'lxml')
         images = []
         
         # 排除关键词
@@ -320,7 +322,9 @@ class BaseFetcher(ABC):
             return []
 
         from bs4 import BeautifulSoup
-        soup = BeautifulSoup(html, 'lxml')
+        from src.utils.helpers import HTML_PARSING_LOCK
+        with HTML_PARSING_LOCK:
+            soup = BeautifulSoup(html, 'lxml')
         seen: set = set()
         result: List[str] = []
 
@@ -360,7 +364,9 @@ class BaseFetcher(ABC):
         <graphic>（EPUB/HTML5 标准元素），但下游的图片处理流程只识别 <img>。
         """
         from bs4 import BeautifulSoup
-        soup = BeautifulSoup(html, 'lxml')
+        from src.utils.helpers import HTML_PARSING_LOCK
+        with HTML_PARSING_LOCK:
+            soup = BeautifulSoup(html, 'lxml')
         for graphic in soup.find_all('graphic'):
             graphic.name = 'img'
         body = soup.body if soup.body else soup
@@ -385,14 +391,16 @@ class BaseFetcher(ABC):
             raw_html = response.text
 
             # 使用 trafilatura 提取正文
-            content = trafilatura.extract(
-                raw_html,
-                include_comments=False,
-                include_tables=True,
-                include_images=True,
-                include_links=True,
-                output_format="html"
-            )
+            from src.utils.helpers import HTML_PARSING_LOCK
+            with HTML_PARSING_LOCK:
+                content = trafilatura.extract(
+                    raw_html,
+                    include_comments=False,
+                    include_tables=True,
+                    include_images=True,
+                    include_links=True,
+                    output_format="html"
+                )
 
             if content:
                 # trafilatura 在 output_format="html" 时会将 <img> 转换为
