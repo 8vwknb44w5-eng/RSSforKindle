@@ -992,21 +992,26 @@ code {
     word-break: break-all;
 }
 pre {
+    font-family: monospace;
+    font-size: 0.8em;
     background-color: #f5f5f5;
     padding: 0.5em 0.8em;
     border-radius: 4px;
     margin: 0.8em 0;
     overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    word-break: normal;
 }
 pre code {
     display: block !important;
     background-color: transparent !important;
     padding: 0 !important;
     border-radius: 0 !important;
-    font-size: 0.8em;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    word-break: normal;
+    font-size: 1em;
+    white-space: inherit;
+    word-wrap: inherit;
+    word-break: inherit;
 }
 
 /* 目录 (nav.xhtml) 专属样式 */

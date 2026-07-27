@@ -412,21 +412,23 @@ class ContentProcessor:
         # 从而将 <p>xxx<pre>code</pre>yyy</p> 树结构破坏为：<p>xxx</p><pre>code</pre>yyy
         # 导致后面的 text 逃逸出 <p> 标签并发生行内代码强制换行。
         # 我们在进入 BeautifulSoup 解析之前，用正则在字符串级别解决该问题。
-        inline_containers = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'a']
+        # 1. 首先处理嵌套在 h1-h6, span, a 等行内/标题元素中的 <pre> 标签。
+        # 这些标签通常不应该包含块级 <pre>，我们将其转换为行内 <code>。
+        inline_containers = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'a']
         for container in inline_containers:
             pattern = re.compile(rf'(<{container}\b[^>]*>)(.*?)(</{container}>)', re.DOTALL | re.IGNORECASE)
             
-            def replace_pre_inside(match):
+            def replace_pre_inside_inline(match):
                 start_tag, content, end_tag = match.group(1), match.group(2), match.group(3)
                 if '<pre' in content.lower():
-                    # 1. <pre><code>...</code></pre> -> <code>...</code>
+                    # 1. <pre...><code...>...</code></pre> -> <code...>...</code> (unwrap pre, preserve code attributes)
                     content = re.sub(
-                        r'<pre\b[^>]*>\s*<code\b[^>]*>(.*?)</code>\s*</pre>',
-                        r'<code>\1</code>',
+                        r'<pre\b[^>]*>\s*(<code\b[^>]*>.*?</code>)\s*</pre>',
+                        r'\1',
                         content,
                         flags=re.DOTALL | re.IGNORECASE
                     )
-                    # 2. <pre>...</pre> -> <code>...</code>
+                    # 2. <pre...>...</pre> -> <code>...</code>
                     content = re.sub(
                         r'<pre\b[^>]*>(.*?)</pre>',
                         r'<code>\1</code>',
@@ -435,7 +437,64 @@ class ContentProcessor:
                     )
                 return f"{start_tag}{content}{end_tag}"
             
-            html = pattern.sub(replace_pre_inside, html)
+            html = pattern.sub(replace_pre_inside_inline, html)
+
+        # 2. 特殊处理嵌套在 <p> 中的 <pre> 标签。
+        p_pattern = re.compile(r'(<p\b[^>]*>)(.*?)(</p>)', re.DOTALL | re.IGNORECASE)
+        
+        def replace_pre_inside_p(match):
+            start_p, p_content, end_p = match.group(1), match.group(2), match.group(3)
+            if '<pre' not in p_content.lower():
+                return match.group(0)
+            
+            # 检查 <p> 内是否仅包含 <pre> 块（忽略空白字符）
+            stripped = re.sub(r'<pre\b[^>]*>.*?</pre>', '', p_content, flags=re.DOTALL | re.IGNORECASE).strip()
+            if not stripped:
+                # 仅包含 <pre> 标签，直接剥离外部 <p> 标签，使其变为块级元素
+                return p_content
+            
+            # 匹配所有 <pre>...</pre> 子块
+            pre_blocks = list(re.finditer(r'<pre\b[^>]*>(.*?)</pre>', p_content, re.DOTALL | re.IGNORECASE))
+            
+            # 判断是否所有嵌套的 <pre> 块都是单行的（即没有换行符或 <br>）
+            all_single_line = True
+            for pb in pre_blocks:
+                inner = pb.group(1)
+                if '\n' in inner or '\r' in inner or '<br' in inner.lower():
+                    all_single_line = False
+                    break
+            
+            if all_single_line:
+                # 都是单行行内代码，转换 <pre> 为 <code> 并保留在 <p> 内部
+                content = re.sub(
+                    r'<pre\b[^>]*>\s*(<code\b[^>]*>.*?</code>)\s*</pre>',
+                    r'\1',
+                    p_content,
+                    flags=re.DOTALL | re.IGNORECASE
+                )
+                content = re.sub(
+                    r'<pre\b[^>]*>(.*?)</pre>',
+                    r'<code>\1</code>',
+                    content,
+                    flags=re.DOTALL | re.IGNORECASE
+                )
+                return f"{start_p}{content}{end_p}"
+            
+            # 存在多行块级代码，必须将 <p> 进行拆分：<p>前</p><pre>代码</pre><p>后</p>
+            pre_pattern = re.compile(r'(<pre\b[^>]*>.*?</pre>)', re.DOTALL | re.IGNORECASE)
+            parts = pre_pattern.split(p_content)
+            res = []
+            for part in parts:
+                if not part:
+                    continue
+                if re.match(r'^<pre\b', part, re.IGNORECASE):
+                    res.append(part)
+                else:
+                    if part.strip():
+                        res.append(f"{start_p}{part}{end_p}")
+            return "".join(res)
+
+        html = p_pattern.sub(replace_pre_inside_p, html)
 
         soup = BeautifulSoup(html, 'lxml')
 

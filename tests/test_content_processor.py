@@ -844,3 +844,41 @@ class TestNestedPreInParagraphOrInline:
         result = processor.process(article)
         assert '<h1>标题 <code>code</code></h1>' in result.content
 
+    def test_multiline_pre_in_p_splits_paragraph(self):
+        """测试 <p> 内包含多行 <pre> 时应该拆分段落，从而保持 <pre> 的块级属性和换行格式"""
+        source = ContentSource(type="web", src="https://example.com")
+        processor = ContentProcessor(source)
+        html = '<p>Before <pre><code>def foo():\n    return 1</code></pre> After</p>'
+        article = _make_article(html)
+        result = processor.process(article)
+        # 验证段落被正确拆分，并且保留了换行
+        assert '<p>Before </p><pre><code>def foo():\n    return 1</code></pre><p> After</p>' in result.content
+
+    def test_pre_only_in_p_unwraps_p(self):
+        """测试当 <p> 仅包含 <pre> 块时，直接剥离外部 <p> 标签"""
+        source = ContentSource(type="web", src="https://example.com")
+        processor = ContentProcessor(source)
+        html = '<p><pre><code>def foo():\n    return 1</code></pre></p>'
+        article = _make_article(html)
+        result = processor.process(article)
+        # 外部 <p> 被拆除，只剩 block 级 <pre>
+        assert '<pre><code>def foo():\n    return 1</code></pre>' in result.content
+
+    def test_pre_with_class_attributes_preserved(self):
+        """测试 <pre> 标签上的类名属性在处理后被正确保留"""
+        source = ContentSource(type="web", src="https://example.com")
+        processor = ContentProcessor(source)
+        html = '<pre class="lang-py"><code class="lang-py">print("hello")</code></pre>'
+        article = _make_article(html)
+        result = processor.process(article)
+        assert 'class="lang-py"' in result.content
+
+    def test_standalone_pre_without_code_preserved(self):
+        """测试没有 <code> 标签的 standalone <pre> 也能正常处理并保留"""
+        source = ContentSource(type="web", src="https://example.com")
+        processor = ContentProcessor(source)
+        html = '<pre>def foo():\n    pass</pre>'
+        article = _make_article(html)
+        result = processor.process(article)
+        assert '<pre>def foo():\n    pass</pre>' in result.content
+
