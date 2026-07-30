@@ -6,8 +6,10 @@ Ought Gather 主入口
 
 import sys
 import os
+import re
 import time
 import concurrent.futures
+from html import unescape
 from typing import List, Tuple
 
 # 添加项目根目录到 Python 路径
@@ -15,6 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.config import load_config, Config, ContentSource
 from src.fetchers import BaseFetcher, FetchResult, get_fetcher_class
+from src.fetchers.base import Article
 from src.processors.content_processor import ContentProcessor
 from src.dedup.tracker import DedupTracker
 from src.epub.generator import EPUBGenerator
@@ -29,6 +32,10 @@ from src.utils.logger import (
     log_banner,
     log_summary_table,
 )
+
+# 纯文本最少字符数；低于此阈值且无图片则视为无效正文
+_MIN_PLAIN_TEXT_LEN = 15
+_TAG_RE = re.compile(r"<[^>]+>")
 
 
 def get_fetcher(source: ContentSource, global_limit: int = 15) -> BaseFetcher:
@@ -49,9 +56,39 @@ def get_fetcher(source: ContentSource, global_limit: int = 15) -> BaseFetcher:
     return fetcher_class(source, global_limit=global_limit)
 
 
+def has_valid_content(article: Article) -> bool:
+    """
+    判断文章是否具备可推送的有效正文。
+
+    规则：
+    - content 为空 / 仅空白 → 无效
+    - 去掉 HTML 标签后的纯文本长度 >= 15 → 有效
+    - 纯文本很短，但存在图片（article.images 或 content 内含 <img>）→ 有效
+    """
+    if not article.content or not str(article.content).strip():
+        return False
+
+    plain = unescape(_TAG_RE.sub("", article.content))
+    plain = re.sub(r"\s+", " ", plain).strip()
+
+    if len(plain) >= _MIN_PLAIN_TEXT_LEN:
+        return True
+
+    if article.images:
+        return True
+
+    if "<img" in article.content.lower():
+        return True
+
+    return False
+
+
 def process_results(results: List[FetchResult], tracker: DedupTracker) -> List[FetchResult]:
     """
     处理抓取结果（去重、内容处理）
+
+    仅当文章具备有效正文时才标记去重并纳入推送列表，
+    避免全文抓取失败产生的空壳文章永久占用去重记录。
 
     Args:
         results: 抓取结果列表
@@ -75,29 +112,40 @@ def process_results(results: List[FetchResult], tracker: DedupTracker) -> List[F
         # 过滤已抓取的文章（trending/web 使用带日期的哈希，每日刷新）
         original_count = len(result.articles)
         new_articles = []
-        for article in result.articles:
-            if not tracker.is_fetched(article.url, article.title, article.published_date):
-                # 只要读取就标记为已处理，无论后续处理是否成功
-                tracker.mark_as_fetched(article.url, article.title, article.published_date)
+        skipped_empty = 0
 
-                # 应用内容处理规则，处理失败则保留原文
-                try:
-                    processor = ContentProcessor(result.source)
-                    article = processor.process(article)
-                except Exception as e:
-                    logger.error(
-                        f"[{prefix}] 处理文章 '{article.title}' 失败: {e}，保留原始文章内容"
-                    )
-                new_articles.append(article)
-            else:
+        for article in result.articles:
+            if tracker.is_fetched(article.url, article.title, article.published_date):
                 logger.debug(f"[{prefix}] 跳过已抓取文章: {article.title}")
+                continue
+
+            # 先做内容处理，再判断是否有效；处理失败则保留原文再校验
+            try:
+                processor = ContentProcessor(result.source)
+                article = processor.process(article)
+            except Exception as e:
+                logger.error(
+                    f"[{prefix}] 处理文章 '{article.title}' 失败: {e}，保留原始文章内容"
+                )
+
+            if not has_valid_content(article):
+                skipped_empty += 1
+                logger.warning(
+                    f"[{prefix}] 跳过无效/空正文（不写入去重）: {article.title}"
+                )
+                continue
+
+            # 仅有效正文才标记去重并进入推送
+            tracker.mark_as_fetched(article.url, article.title, article.published_date)
+            new_articles.append(article)
 
         # 更新结果
         result.articles = new_articles
         processed_results.append(result)
 
+        extra = f"，跳过空正文 {skipped_empty} 篇" if skipped_empty else ""
         logger.info(
-            f"[{prefix}] 内容处理完成: {len(new_articles)}/{original_count} 篇新文章"
+            f"[{prefix}] 内容处理完成: {len(new_articles)}/{original_count} 篇新文章{extra}"
         )
 
     return processed_results
@@ -124,7 +172,7 @@ def main():
     log_banner("Ought Gather - 自动化信息聚合工具")
 
     try:
-        # 1. 加载配置与去重记录
+        # 1. 加载配置与初始化去重追踪器
         log_stage(1, 5, "加载配置与初始化去重追踪器")
         config = load_config()
         logger.info(f"成功加载 {len(config.body)} 个内容源配置")
