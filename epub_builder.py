@@ -19,12 +19,18 @@ def create_epub(articles, output_file="kindle.epub"):
             lang="en",
         )
 
-        chapter.content = f"""
-        <h1>{article['title']}</h1>
-        <p><a href="{article['link']}">{article['link']}</a></p>
-        <hr/>
-        {article['content']}
-        """
+        image = ""
+
+if article.get("top_image"):
+    image = f'<p><img src="{article["top_image"]}" /></p>'
+
+chapter.content = f"""
+<h1>{article['title']}</h1>
+<p><a href="{article['link']}">{article['link']}</a></p>
+{image}
+<hr/>
+{article['content']}
+"""
 
         book.add_item(chapter)
         chapters.append(chapter)
