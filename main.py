@@ -3,7 +3,7 @@ from newspaper import Article
 from epub_builder import create_epub
 from mailer import send_epub
 
-LIMIT = 15
+LIMIT = 10
 
 
 def extract_article(url):
