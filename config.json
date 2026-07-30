@@ -7,30 +7,6 @@
   "body": [
     {
       "type": "rss",
-      "src": "https://www.elpais.com/rss/feed.html?feedId=1022",
-      "title": "EL PAÍS: el periódico global",
-      "priority": "",
-      "keep_link": "",
-      "full_text": ""
-    },
-    {
-      "type": "rss",
-      "src": "https://Eldiario.es/rss/",
-      "title": "elDiario.es - elDiario.es",
-      "priority": "",
-      "keep_link": "",
-      "full_text": ""
-    },
-    {
-      "type": "rss",
-      "src": "https://feeds.arstechnica.com/arstechnica/index/",
-      "title": "Ars Technica - All content",
-      "priority": "",
-      "keep_link": "",
-      "full_text": ""
-    },
-    {
-      "type": "rss",
       "src": "https://www.theverge.com/rss/index.xml",
       "title": "The Verge",
       "priority": "",
