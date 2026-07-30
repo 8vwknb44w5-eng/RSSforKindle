@@ -11,12 +11,15 @@ def extract_article(url):
         article = Article(url)
         article.download()
         article.parse()
+        article.nlp()
+        top_image = article.top_image
 
         return {
-            "title": article.title,
-            "link": url,
-            "content": article.text.replace("\n", "<br/>")
-        }
+    "title": article.title,
+    "link": url,
+    "content": article.text.replace("\n", "<br/>"),
+    "top_image": top_image,
+}
     except Exception as e:
         print(f"Error leyendo {url}: {e}")
         return None
