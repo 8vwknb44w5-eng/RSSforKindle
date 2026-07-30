@@ -14,5 +14,4 @@ http://linuxadictos.com/feed/
 http://feeds.macrumors.com/MacRumors-All
 https://www.theverge.com/rss/index.xml
 https://recetasparathermomix.com/feed/
-http://feeds.feedburner.com/gearpatrol
-http://uncrate.com/rss/index.xml
+
