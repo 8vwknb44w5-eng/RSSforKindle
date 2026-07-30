@@ -39,3 +39,15 @@ for feed_url in feeds:
 
         if article:
             articles.append(article)
+if not articles:
+    raise Exception("No se ha podido descargar ningún artículo.")
+
+print(f"Artículos descargados: {len(articles)}")
+
+epub_file = create_epub(articles)
+
+print(f"EPUB generado: {epub_file}")
+
+send_epub(epub_file)
+
+print("Proceso terminado.")
