@@ -1,18 +1,41 @@
 import feedparser
+from newspaper import Article
+from epub_builder import create_epub
+from mailer import send_epub
 
 LIMIT = 15
 
-with open("feeds.txt", "r", encoding="utf-8") as f:
+
+def extract_article(url):
+    try:
+        article = Article(url)
+        article.download()
+        article.parse()
+
+        return {
+            "title": article.title,
+            "link": url,
+            "content": article.text.replace("\n", "<br/>")
+        }
+    except Exception as e:
+        print(f"Error leyendo {url}: {e}")
+        return None
+
+
+articles = []
+
+with open("feeds.txt", encoding="utf-8") as f:
     feeds = [line.strip() for line in f if line.strip()]
 
-for url in feeds:
-    feed = feedparser.parse(url)
+for feed_url in feeds:
+    feed = feedparser.parse(feed_url)
 
-    print("=" * 80)
-    print(feed.feed.get("title", url))
-    print("=" * 80)
+    print(f"Leyendo {feed.feed.get('title', feed_url)}")
 
     for entry in feed.entries[:LIMIT]:
         print(entry.title)
-        print(entry.link)
-        print()
+
+        article = extract_article(entry.link)
+
+        if article:
+            articles.append(article)
