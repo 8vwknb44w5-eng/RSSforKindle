@@ -3,12 +3,156 @@
     "text": "{每日新闻</br>{time}}",
     "img": ""
   },
-  "limit": 5,
+  "limit": 15,
   "body": [
     {
       "type": "rss",
-      "src": "https://raw.githubusercontent.com/liusonwood/rssqweather/main/weather.xml",
-      "title": "",
+      "src": "https://www.cbr.com/feed/category/comics/",
+      "title": "CBR - Comics",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "http://www.zendalibros.com/feed/",
+      "title": "Zenda",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "http://www.laopiniondemalaga.es/elementosInt/rss/13",
+      "title": "La Opinión de Málaga - Málaga",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "http://Eldiario.es/rss/",
+      "title": "elDiario.es - elDiario.es",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "http://www.elpais.com/rss/feed.html?feedId=1022",
+      "title": "EL PAÍS: el periódico global",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "http://www.applelianos.com/feed/",
+      "title": "Applelianos",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "http://www.muylinux.com/feed/",
+      "title": "MuyLinux",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "http://www.javipas.com/feed/",
+      "title": "Incognitosis",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "http://feeds.weblogssl.com/xataka2",
+      "title": "Xataka",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "https://www.wired.com/feed/rss",
+      "title": "WIRED",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "https://www.thurrott.com/feed",
+      "title": "Thurrott.com",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "http://feeds.arstechnica.com/arstechnica/index/",
+      "title": "Ars Technica - All content",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "http://linuxadictos.com/feed/",
+      "title": "Linux Adictos",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "http://feeds.macrumors.com/MacRumors-All",
+      "title": "MacRumors: Mac News and Rumors - All Stories",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "https://www.theverge.com/rss/index.xml",
+      "title": "The Verge",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "https://recetasparathermomix.com/feed/",
+      "title": "Recetas para Thermomix",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "http://feeds.feedburner.com/gearpatrol",
+      "title": "Gear Patrol",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "http://uncrate.com/rss/index.xml",
+      "title": "Uncrate",
+      "priority": "",
+      "keep_link": "",
+      "full_text": ""
+    },
+    {
+      "type": "rss",
+      "src": "https://ecosophia.net/feed",
+      "title": "Ecosophia",
       "priority": "",
       "keep_link": "",
       "full_text": ""
