@@ -5,3 +5,4 @@ newspaper4k
 ebooklib
 lxml
 readability-lxml
+Pillow
