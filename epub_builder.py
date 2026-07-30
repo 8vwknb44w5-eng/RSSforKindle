@@ -1,5 +1,4 @@
 from ebooklib import epub
-from datetime import datetime
 
 
 def create_epub(articles, output_file="kindle.epub"):
@@ -19,8 +18,7 @@ def create_epub(articles, output_file="kindle.epub"):
             lang="en",
         )
 
-                image = ""
-
+        image = ""
         if article.get("top_image"):
             image = f'<p><img src="{article["top_image"]}" /></p>'
 
@@ -45,14 +43,6 @@ def create_epub(articles, output_file="kindle.epub"):
     body {
         font-family: serif;
         margin: 5%;
-    }
-
-    h1 {
-        color: #222;
-    }
-
-    a {
-        color: blue;
     }
     """
 
