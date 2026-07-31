@@ -204,7 +204,7 @@ def main():
                         # tracker.is_fetched 是纯读操作，线程安全
                         new_candidates = [
                             c for c in candidates
-                            if not tracker.is_fetched(c["url"], c.get("title"))
+                            if not tracker.is_fetched(c["url"])
                         ]
                         # 限额截断：去重后取最多 limit 个新候选项
                         limit = fetcher.get_limit()

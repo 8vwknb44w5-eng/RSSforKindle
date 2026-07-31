@@ -62,7 +62,15 @@ class DedupTracker:
         content_id = generate_content_id(url, title, published_date)
         if published_date:
             self.logger.debug(f"Dedup check [{published_date}]: url={url}, hash={content_id}")
-        return content_id in self.fetched_ids
+        if content_id in self.fetched_ids:
+            return True
+
+        # 两阶段去重后备：仅用 URL 匹配（title 不为 None 时不启用，
+        # 因为相同 URL 不同标题在业务场景中代表不同内容，需由 content_id 判断）
+        if title is not None:
+            return False
+        url_hash = generate_content_id(url, None, None)
+        return url_hash in self.fetched_ids
 
     def mark_as_fetched(self, url: str, title: str = None, published_date: str = None):
         """
@@ -74,16 +82,20 @@ class DedupTracker:
             published_date: 发布日期（用于 trending/web 等每日刷新场景）
         """
         content_id = generate_content_id(url, title, published_date)
+        # 同时生成 URL-only 哈希，用于第一阶段去重时仅靠 URL 匹配
+        url_hash = generate_content_id(url, None, None)
 
-        if content_id not in self.fetched_ids:
-            self.fetched_ids.add(content_id)
-            self.new_ids.add(content_id)
-            if published_date:
-                self.logger.info(
-                    f"Marked as fetched [{published_date}]: url={url}, hash={content_id}"
-                )
-            else:
-                self.logger.debug(f"Marked as fetched: {content_id}")
+        for hid in (url_hash, content_id):
+            if hid not in self.fetched_ids:
+                self.fetched_ids.add(hid)
+                self.new_ids.add(hid)
+
+        if published_date:
+            self.logger.info(
+                f"Marked as fetched [{published_date}]: url={url}, hash={content_id}"
+            )
+        else:
+            self.logger.debug(f"Marked as fetched: {content_id}")
 
     def save(self):
         """保存新的抓取记录"""

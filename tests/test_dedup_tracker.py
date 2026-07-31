@@ -52,24 +52,26 @@ class TestDedupTrackerBasic:
         assert tracker.is_fetched("https://example.com") is True
 
     def test_new_ids_tracked(self, tmp_dir):
-        """mark_as_fetched 同时记录到 new_ids"""
+        """mark_as_fetched 同时记录内容哈希和 URL 哈希到 new_ids"""
         data_file = os.path.join(tmp_dir, "fetched_urls.txt")
         tracker = DedupTracker(data_file)
 
         tracker.mark_as_fetched("https://example.com/a", "A")
         tracker.mark_as_fetched("https://example.com/b", "B")
 
-        assert len(tracker.new_ids) == 2
+        # 每篇文章产生 2 条哈希：URL 哈希 + 内容哈希
+        assert len(tracker.new_ids) == 4
 
     def test_mark_already_fetched_not_in_new_ids(self, tmp_dir):
-        """重复标记已抓取的内容不会加入 new_ids"""
+        """重复标记已抓取的内容不会加入 new_ids（含 URL 哈希）"""
         data_file = os.path.join(tmp_dir, "fetched_urls.txt")
         tracker = DedupTracker(data_file)
 
         tracker.mark_as_fetched("https://example.com", "标题")
         tracker.mark_as_fetched("https://example.com", "标题")  # 重复
 
-        assert len(tracker.new_ids) == 1
+        # 第一次标记产生 2 条哈希（URL + 内容），第二次不增加
+        assert len(tracker.new_ids) == 2
 
 
 # =========================================================================
@@ -144,41 +146,43 @@ class TestDedupTrackerStats:
     """DedupTracker 统计与清理测试"""
 
     def test_get_stats(self, tmp_dir):
-        """get_stats 返回正确统计"""
-        data_file = os.path.join(tmp_dir, "fetched_urls.txt")
-        tracker = DedupTracker(data_file)
+            """get_stats 返回正确统计（含 URL 去重哈希）"""
+            data_file = os.path.join(tmp_dir, "fetched_urls.txt")
+            tracker = DedupTracker(data_file)
 
-        tracker.mark_as_fetched("https://example.com/a", "A")
-        tracker.mark_as_fetched("https://example.com/b", "B")
+            tracker.mark_as_fetched("https://example.com/a", "A")
+            tracker.mark_as_fetched("https://example.com/b", "B")
 
-        stats = tracker.get_stats()
-        assert stats["total_fetched"] == 2
-        assert stats["new_fetched"] == 2
+            stats = tracker.get_stats()
+            # 每篇标记产生 2 条哈希（URL + 内容），总计 4 条
+            assert stats["total_fetched"] == 4
+            assert stats["new_fetched"] == 4
 
     def test_get_stats_after_reload(self, tmp_dir):
-        """重新加载后 new_fetched 为 0"""
-        data_file = os.path.join(tmp_dir, "fetched_urls.txt")
+            """重新加载后 new_fetched 为 0"""
+            data_file = os.path.join(tmp_dir, "fetched_urls.txt")
 
-        tracker1 = DedupTracker(data_file)
-        tracker1.mark_as_fetched("https://example.com", "标题")
-        tracker1.save()
+            tracker1 = DedupTracker(data_file)
+            tracker1.mark_as_fetched("https://example.com", "标题")
+            tracker1.save()
 
-        tracker2 = DedupTracker(data_file)
-        stats = tracker2.get_stats()
-        assert stats["total_fetched"] == 1
-        assert stats["new_fetched"] == 0
+            tracker2 = DedupTracker(data_file)
+            stats = tracker2.get_stats()
+            # 加载持久化的 2 条哈希（URL + 内容）
+            assert stats["total_fetched"] == 2
+            assert stats["new_fetched"] == 0
 
     def test_clear_new_ids(self, tmp_dir):
-        """clear_new_ids 清空 new_ids 但保留 fetched_ids"""
-        data_file = os.path.join(tmp_dir, "fetched_urls.txt")
-        tracker = DedupTracker(data_file)
+            """clear_new_ids 清空 new_ids 但保留 fetched_ids"""
+            data_file = os.path.join(tmp_dir, "fetched_urls.txt")
+            tracker = DedupTracker(data_file)
 
-        tracker.mark_as_fetched("https://example.com", "标题")
-        assert len(tracker.new_ids) == 1
+            tracker.mark_as_fetched("https://example.com", "标题")
+            assert len(tracker.new_ids) == 2
 
-        tracker.clear_new_ids()
-        assert len(tracker.new_ids) == 0
-        assert len(tracker.fetched_ids) == 1  # fetched_ids 不受影响
+            tracker.clear_new_ids()
+            assert len(tracker.new_ids) == 0
+            assert len(tracker.fetched_ids) == 2  # fetched_ids 含内容哈希 + URL 哈希
 
 
 # =========================================================================
@@ -189,18 +193,19 @@ class TestDedupTrackerCleanup:
     """DedupTracker 超过上限自动清理测试"""
 
     def test_no_cleanup_when_under_max(self, tmp_dir, monkeypatch):
-        """未达到上限时不触发清理"""
+        "未达到上限时不触发清理"
         data_file = os.path.join(tmp_dir, "fetched_urls.txt")
         monkeypatch.setattr(DedupTracker, 'MAX_RECORDS', 5)
 
+        # 只标记 2 篇文章（4 条哈希），不超过上限
         tracker = DedupTracker(data_file)
-        for i in range(3):
+        for i in range(2):
             tracker.mark_as_fetched(f"https://example.com/{i}", f"T{i}")
         tracker.save()
 
         with open(data_file) as f:
             lines = [l.strip() for l in f if l.strip()]
-        assert len(lines) == 3
+        assert len(lines) == 4
 
     def test_no_cleanup_at_exact_max(self, tmp_dir, monkeypatch):
         """恰好等于上限时不触发清理"""
@@ -224,30 +229,30 @@ class TestDedupTrackerCleanup:
         # 预先写入 5 条旧记录（直接写文件，模拟历史数据）
         with open(data_file, 'w') as f:
             for i in range(5):
-                f.write(f"old_{i}\n")
+                f.write(f"old_{i}
+")
 
         tracker = DedupTracker(data_file)
         assert len(tracker.fetched_ids) == 5
 
-        # 新增 3 条，总数 8 > 5，应触发清理
-        for i in range(3):
+        # 新增 2 篇 → 4 条新哈希，总数 9 > 5，应触发清理
+        for i in range(2):
             tracker.mark_as_fetched(f"https://example.com/new_{i}", f"N{i}")
         tracker.save()
 
-        # 文件应只保留 5 条：最旧的 3 条被清理，留下 old_3、old_4 和 3 条新记录
+        # 文件应只保留 5 条：最旧的 4 条被清理，留下 old_4 和 4 条新记录
         with open(data_file) as f:
             lines = [l.strip() for l in f if l.strip()]
         assert len(lines) == 5
+        # old_0 ~ old_3 被清理
         assert "old_0" not in lines
-        assert "old_1" not in lines
-        assert "old_2" not in lines
-        assert "old_3" in lines
+        assert "old_3" not in lines
         assert "old_4" in lines
 
         # 内存中的 set 同步更新
         assert len(tracker.fetched_ids) == 5
         assert "old_0" not in tracker.fetched_ids
-        assert "old_3" in tracker.fetched_ids
+        assert "old_4" in tracker.fetched_ids
 
     def test_cleanup_keeps_newest_in_order(self, tmp_dir, monkeypatch):
         """清理后文件中记录保持原有顺序（最新记录在末尾）"""
@@ -256,21 +261,23 @@ class TestDedupTrackerCleanup:
 
         # 写入 3 条历史数据
         with open(data_file, 'w') as f:
-            f.write("aaa\nbbb\nccc\n")
+            f.write("aaa
+bbb
+ccc
+")
 
         tracker = DedupTracker(data_file)
+        # 只新增 1 篇（2 条哈希），总数 5 > 3 触发清理
         tracker.mark_as_fetched("https://example.com/x", "X")
-        tracker.mark_as_fetched("https://example.com/y", "Y")
         tracker.save()
 
         with open(data_file) as f:
             lines = [l.strip() for l in f if l.strip()]
 
-        # 追加后为 [aaa, bbb, ccc, new1, new2]，保留末尾 3 条
-        # 所以第一条是 ccc（旧记录中保留下来最晚的一条）
-        assert lines[0] == "ccc"
-        # 新追加的 2 条都在
+        # 追加后为 [aaa, bbb, ccc, url_hash_X, content_hash_X]，
+        # 保留末尾 3 条：ccc, url_hash_X, content_hash_X
         assert len(lines) == 3
+        assert lines[0] == "ccc"
         assert all(line not in ("aaa", "bbb") for line in lines)
 
     def test_cleanup_after_reload(self, tmp_dir, monkeypatch):
