@@ -308,6 +308,66 @@ class TestRSSFetcher:
         assert len(result.articles) == 10
 
 
+class TestTrendingFetcher:
+    """TrendingFetcher 测试"""
+
+    @patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-key"})
+    @patch("src.fetchers.trending_fetcher.httpx.Client")
+    def test_trending_title_extraction_plain_text(self, mock_client_cls):
+        """测试 TrendingFetcher 能够将纯文本首行作为标题提取"""
+        source = ContentSource(type="trending", src="AI trends", goal="Analyze AI")
+        
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "choices": [{
+                "message": {
+                    "content": "人工智能最新发展趋势报告\n\n- 趋势1\n- 趋势2"
+                }
+            }]
+        }
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+        mock_client.__enter__.return_value = mock_client
+        mock_client_cls.return_value = mock_client
+
+        fetcher = TrendingFetcher(source)
+        result = fetcher.fetch()
+
+        assert result.success is True
+        assert len(result.articles) == 1
+        assert result.articles[0].title == "人工智能最新发展趋势报告"
+        assert "人工智能最新发展趋势报告" not in result.articles[0].content
+
+    @patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-key"})
+    @patch("src.fetchers.trending_fetcher.httpx.Client")
+    def test_trending_title_extraction_markdown_and_bold(self, mock_client_cls):
+        """测试 TrendingFetcher 能够处理 Markdown 标题和加粗首行"""
+        source = ContentSource(type="trending", src="AI trends", goal="Analyze AI")
+        
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "choices": [{
+                "message": {
+                    "content": "**大模型演进分析**\n\n正文内容..."
+                }
+            }]
+        }
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+        mock_client.__enter__.return_value = mock_client
+        mock_client_cls.return_value = mock_client
+
+        fetcher = TrendingFetcher(source)
+        result = fetcher.fetch()
+
+        assert result.success is True
+        assert len(result.articles) == 1
+        assert result.articles[0].title == "大模型演进分析"
+
+
+
 # =========================================================================
 # WebFetcher 测试
 # =========================================================================
