@@ -7,6 +7,7 @@ import os
 import pytest
 
 from src.dedup.tracker import DedupTracker
+from src.utils.helpers import generate_content_id
 
 
 # =========================================================================
@@ -35,7 +36,7 @@ class TestDedupTrackerBasic:
         assert tracker.is_fetched("https://example.com", "标题") is True
 
     def test_mark_same_url_different_title(self, tmp_dir):
-        """相同 URL 不同标题视为不同内容"""
+        """相同 URL 不同标题视为不同内容（阶段三完整哈希）"""
         data_file = os.path.join(tmp_dir, "fetched_urls.txt")
         tracker = DedupTracker(data_file)
 
@@ -72,6 +73,86 @@ class TestDedupTrackerBasic:
 
         # 第一次标记产生 2 条哈希（URL + 内容），第二次不增加
         assert len(tracker.new_ids) == 2
+
+
+# =========================================================================
+# 阶段一 URL 去重
+# =========================================================================
+
+class TestDedupTrackerStageOne:
+    """阶段一仅凭 URL 去重的行为"""
+
+    def test_stage_one_matches_after_mark_with_title(self, tmp_dir):
+        """带标题标记后，阶段一（仅 URL）应命中 URL-only 哈希"""
+        data_file = os.path.join(tmp_dir, "fetched_urls.txt")
+        tracker = DedupTracker(data_file)
+
+        tracker.mark_as_fetched("https://sspai.com/post/112930", "少数派早报")
+
+        assert tracker.is_fetched("https://sspai.com/post/112930") is True
+
+    def test_stage_one_survives_reload(self, tmp_dir):
+        """URL-only 哈希持久化后，重启仍能在阶段一跳过"""
+        data_file = os.path.join(tmp_dir, "fetched_urls.txt")
+
+        tracker1 = DedupTracker(data_file)
+        tracker1.mark_as_fetched("https://sspai.com/post/112930", "少数派早报")
+        tracker1.save()
+
+        tracker2 = DedupTracker(data_file)
+        assert tracker2.is_fetched("https://sspai.com/post/112930") is True
+        assert tracker2.is_fetched("https://sspai.com/post/112930", "少数派早报") is True
+
+    def test_historical_content_only_hash_misses_stage_one(self, tmp_dir):
+        """历史仅有内容哈希时，阶段一无法匹配（需阶段三回填）"""
+        data_file = os.path.join(tmp_dir, "fetched_urls.txt")
+        url = "https://sspai.com/post/112930"
+        title = "少数派早报"
+        content_id = generate_content_id(url, title, None)
+
+        with open(data_file, "w", encoding="utf-8") as f:
+            f.write(f"{content_id}\n")
+
+        tracker = DedupTracker(data_file)
+        assert tracker.is_fetched(url, title) is True
+        assert tracker.is_fetched(url) is False
+
+    def test_backfill_url_hash_enables_stage_one(self, tmp_dir):
+        """阶段三命中后再次 mark，可回填 URL 哈希供下次阶段一使用"""
+        data_file = os.path.join(tmp_dir, "fetched_urls.txt")
+        url = "https://sspai.com/post/112930"
+        title = "少数派早报"
+        content_id = generate_content_id(url, title, None)
+
+        with open(data_file, "w", encoding="utf-8") as f:
+            f.write(f"{content_id}\n")
+
+        tracker = DedupTracker(data_file)
+        assert tracker.is_fetched(url) is False
+
+        # 模拟 process_results 跳过已抓取时的回填
+        tracker.mark_as_fetched(url, title)
+        assert tracker.is_fetched(url) is True
+
+        tracker.save()
+        reloaded = DedupTracker(data_file)
+        assert reloaded.is_fetched(url) is True
+        assert reloaded.is_fetched(url, title) is True
+
+    def test_published_date_not_blocked_by_url_hash(self, tmp_dir):
+        """带日期的内容（如 trending）不因 URL 哈希在阶段三被误判"""
+        data_file = os.path.join(tmp_dir, "fetched_urls.txt")
+        tracker = DedupTracker(data_file)
+
+        tracker.mark_as_fetched("https://example.com/trend", "热点", "2026-07-30")
+        # 同 URL 次日应视为新内容
+        assert tracker.is_fetched(
+            "https://example.com/trend", "热点", "2026-07-31"
+        ) is False
+        # 同日仍命中
+        assert tracker.is_fetched(
+            "https://example.com/trend", "热点", "2026-07-30"
+        ) is True
 
 
 # =========================================================================
@@ -146,43 +227,43 @@ class TestDedupTrackerStats:
     """DedupTracker 统计与清理测试"""
 
     def test_get_stats(self, tmp_dir):
-            """get_stats 返回正确统计（含 URL 去重哈希）"""
-            data_file = os.path.join(tmp_dir, "fetched_urls.txt")
-            tracker = DedupTracker(data_file)
+        """get_stats 返回正确统计（含 URL 去重哈希）"""
+        data_file = os.path.join(tmp_dir, "fetched_urls.txt")
+        tracker = DedupTracker(data_file)
 
-            tracker.mark_as_fetched("https://example.com/a", "A")
-            tracker.mark_as_fetched("https://example.com/b", "B")
+        tracker.mark_as_fetched("https://example.com/a", "A")
+        tracker.mark_as_fetched("https://example.com/b", "B")
 
-            stats = tracker.get_stats()
-            # 每篇标记产生 2 条哈希（URL + 内容），总计 4 条
-            assert stats["total_fetched"] == 4
-            assert stats["new_fetched"] == 4
+        stats = tracker.get_stats()
+        # 每篇标记产生 2 条哈希（URL + 内容），总计 4 条
+        assert stats["total_fetched"] == 4
+        assert stats["new_fetched"] == 4
 
     def test_get_stats_after_reload(self, tmp_dir):
-            """重新加载后 new_fetched 为 0"""
-            data_file = os.path.join(tmp_dir, "fetched_urls.txt")
+        """重新加载后 new_fetched 为 0"""
+        data_file = os.path.join(tmp_dir, "fetched_urls.txt")
 
-            tracker1 = DedupTracker(data_file)
-            tracker1.mark_as_fetched("https://example.com", "标题")
-            tracker1.save()
+        tracker1 = DedupTracker(data_file)
+        tracker1.mark_as_fetched("https://example.com", "标题")
+        tracker1.save()
 
-            tracker2 = DedupTracker(data_file)
-            stats = tracker2.get_stats()
-            # 加载持久化的 2 条哈希（URL + 内容）
-            assert stats["total_fetched"] == 2
-            assert stats["new_fetched"] == 0
+        tracker2 = DedupTracker(data_file)
+        stats = tracker2.get_stats()
+        # 加载持久化的 2 条哈希（URL + 内容）
+        assert stats["total_fetched"] == 2
+        assert stats["new_fetched"] == 0
 
     def test_clear_new_ids(self, tmp_dir):
-            """clear_new_ids 清空 new_ids 但保留 fetched_ids"""
-            data_file = os.path.join(tmp_dir, "fetched_urls.txt")
-            tracker = DedupTracker(data_file)
+        """clear_new_ids 清空 new_ids 但保留 fetched_ids"""
+        data_file = os.path.join(tmp_dir, "fetched_urls.txt")
+        tracker = DedupTracker(data_file)
 
-            tracker.mark_as_fetched("https://example.com", "标题")
-            assert len(tracker.new_ids) == 2
+        tracker.mark_as_fetched("https://example.com", "标题")
+        assert len(tracker.new_ids) == 2
 
-            tracker.clear_new_ids()
-            assert len(tracker.new_ids) == 0
-            assert len(tracker.fetched_ids) == 2  # fetched_ids 含内容哈希 + URL 哈希
+        tracker.clear_new_ids()
+        assert len(tracker.new_ids) == 0
+        assert len(tracker.fetched_ids) == 2  # fetched_ids 含内容哈希 + URL 哈希
 
 
 # =========================================================================
@@ -193,7 +274,7 @@ class TestDedupTrackerCleanup:
     """DedupTracker 超过上限自动清理测试"""
 
     def test_no_cleanup_when_under_max(self, tmp_dir, monkeypatch):
-        "未达到上限时不触发清理"
+        """未达到上限时不触发清理"""
         data_file = os.path.join(tmp_dir, "fetched_urls.txt")
         monkeypatch.setattr(DedupTracker, 'MAX_RECORDS', 5)
 
@@ -213,8 +294,9 @@ class TestDedupTrackerCleanup:
         monkeypatch.setattr(DedupTracker, 'MAX_RECORDS', 3)
 
         tracker = DedupTracker(data_file)
+        # 无标题时 url_hash == content_id，每篇 1 条
         for i in range(3):
-            tracker.mark_as_fetched(f"https://example.com/{i}", f"T{i}")
+            tracker.mark_as_fetched(f"https://example.com/{i}")
         tracker.save()
 
         with open(data_file) as f:
@@ -229,8 +311,7 @@ class TestDedupTrackerCleanup:
         # 预先写入 5 条旧记录（直接写文件，模拟历史数据）
         with open(data_file, 'w') as f:
             for i in range(5):
-                f.write(f"old_{i}
-")
+                f.write(f"old_{i}\n")
 
         tracker = DedupTracker(data_file)
         assert len(tracker.fetched_ids) == 5
@@ -261,10 +342,7 @@ class TestDedupTrackerCleanup:
 
         # 写入 3 条历史数据
         with open(data_file, 'w') as f:
-            f.write("aaa
-bbb
-ccc
-")
+            f.write("aaa\nbbb\nccc\n")
 
         tracker = DedupTracker(data_file)
         # 只新增 1 篇（2 条哈希），总数 5 > 3 触发清理

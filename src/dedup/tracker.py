@@ -49,41 +49,33 @@ class DedupTracker:
 
     def is_fetched(self, url: str, title: str = None, published_date: str = None) -> bool:
         """
-        检查内容是否已抓取
+        检查内容是否已抓取。
 
-        Args:
-            url: 内容 URL
-            title: 内容标题
-            published_date: 发布日期（用于 trending/web 等每日刷新场景）
-
-        Returns:
-            bool: 是否已抓取
+        - 阶段一（仅传 URL）：用 URL-only 哈希判断，同 URL 视为同文章，避免重复进阶段二。
+        - 阶段三 / 非两阶段（传了 title 或 published_date）：用完整内容哈希判断，
+          避免 Weather/Trending 等共用 URL、按日刷新的场景被误判为已抓取。
         """
+        # 阶段一：仅 URL 去重
+        if title is None and published_date is None:
+            url_hash = generate_content_id(url, None, None)
+            return url_hash in self.fetched_ids
+
+        # 阶段三 / 非两阶段：完整内容哈希
         content_id = generate_content_id(url, title, published_date)
         if published_date:
             self.logger.debug(f"Dedup check [{published_date}]: url={url}, hash={content_id}")
-        if content_id in self.fetched_ids:
-            return True
-
-        # 两阶段去重后备：仅用 URL 匹配（title 不为 None 时不启用，
-        # 因为相同 URL 不同标题在业务场景中代表不同内容，需由 content_id 判断）
-        if title is not None:
-            return False
-        url_hash = generate_content_id(url, None, None)
-        return url_hash in self.fetched_ids
+        return content_id in self.fetched_ids
 
     def mark_as_fetched(self, url: str, title: str = None, published_date: str = None):
         """
-        标记内容为已抓取
+        标记内容为已抓取。
 
-        Args:
-            url: 内容 URL
-            title: 内容标题
-            published_date: 发布日期（用于 trending/web 等每日刷新场景）
+        同时持久化：
+        - URL-only 哈希：供阶段一仅凭 URL 跳过已抓文章
+        - 完整内容哈希：供阶段三 / Weather·Trending 等带标题或日期的去重
         """
-        content_id = generate_content_id(url, title, published_date)
-        # 同时生成 URL-only 哈希，用于第一阶段去重时仅靠 URL 匹配
         url_hash = generate_content_id(url, None, None)
+        content_id = generate_content_id(url, title, published_date)
 
         for hid in (url_hash, content_id):
             if hid not in self.fetched_ids:

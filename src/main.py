@@ -117,6 +117,11 @@ def process_results(results: List[FetchResult], tracker: DedupTracker) -> List[F
         for article in result.articles:
             if tracker.is_fetched(article.url, article.title, article.published_date):
                 logger.debug(f"[{prefix}] 跳过已抓取文章: {article.title}")
+                # 回填 URL-only 哈希：历史记录可能只有内容哈希，
+                # 不回填则阶段一永远匹配不到，每次仍会进入阶段二抓详情。
+                tracker.mark_as_fetched(
+                    article.url, article.title, article.published_date
+                )
                 continue
 
             # 先做内容处理，再判断是否有效；处理失败则保留原文再校验

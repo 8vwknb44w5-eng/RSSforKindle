@@ -258,6 +258,7 @@ class TestDedupIntegration:
         # 每篇产 2 条哈希（URL + 内容），3 篇文章 = 6 条
         assert stats["total_fetched"] == 6
         assert stats["new_fetched"] == 0  # 没有新标记
+
         print(f"✓ 第三次运行：总共 {stats['total_fetched']} 篇已抓取")
 
 
