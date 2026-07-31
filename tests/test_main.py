@@ -439,12 +439,14 @@ def test_main_raw_counts_isolation(
     
     # Configure mock fetchers
     mock_fetcher_instance1 = MagicMock()
+    mock_fetcher_instance1.supports_two_phase = False  # 使用单阶段路径
     mock_result1 = MagicMock()
     mock_result1.success = True
     mock_result1.articles = [MagicMock(), MagicMock(), MagicMock()]  # raw count = 3
     mock_fetcher_instance1.fetch_with_retry.return_value = mock_result1
     
     mock_fetcher_instance2 = MagicMock()
+    mock_fetcher_instance2.supports_two_phase = False  # 使用单阶段路径
     mock_result2 = MagicMock()
     mock_result2.success = True
     mock_result2.articles = [MagicMock()]  # raw count = 1
