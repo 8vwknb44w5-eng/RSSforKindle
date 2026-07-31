@@ -638,7 +638,7 @@ class TestTrendingFetcher:
         assert "<h2>Extracted Title 2</h2>" not in result.articles[0].content
         assert "This is the second content body." in result.articles[0].content
 
-        # Case 3: ### 开头 (不应提取为标题，应保留在正文中)
+        # Case 3: ### 开头 (现在应提取为标题并从正文中去除)
         mock_response.json.return_value = {
             "choices": [
                 {
@@ -650,8 +650,8 @@ class TestTrendingFetcher:
         }
         result = fetcher.fetch()
         assert result.success is True
-        assert result.articles[0].title == "热点分析: AI 趋势"  # 默认标题
-        assert "<h3>Header 3</h3>" in result.articles[0].content
+        assert result.articles[0].title == "Header 3"  # 现在应提取为标题
+        assert "<h3>Header 3</h3>" not in result.articles[0].content # 并从正文中去除
         assert "This is the third content body." in result.articles[0].content
 
         # Case 4: 带自定义标题
