@@ -189,7 +189,33 @@ def main():
             start_task_buffer()
             try:
                 fetcher = get_fetcher(source, global_limit=config.limit)
-                res = fetcher.fetch_with_retry()
+
+                if fetcher.supports_two_phase:
+                    # 两阶段抓取：先取候选列表，去重过滤后只抓新内容
+                    candidates = fetcher.fetch_list()
+                    if candidates is None:
+                        # fetch_list 失败，回退到单阶段全量抓取
+                        logger.warning(
+                            f"fetch_list 返回 None，回退单阶段抓取: {source.src}"
+                        )
+                        res = fetcher.fetch_with_retry()
+                    else:
+                        # 去重过滤：仅保留未抓取过的候选项
+                        # tracker.is_fetched 是纯读操作，线程安全
+                        new_candidates = [
+                            c for c in candidates
+                            if not tracker.is_fetched(c["url"], c.get("title"))
+                        ]
+                        skipped = len(candidates) - len(new_candidates)
+                        logger.info(
+                            f"[两阶段] {source.type} | {truncate_url(source.src, 40)}: "
+                            f"{len(new_candidates)}/{len(candidates)} 篇待抓取"
+                            + (f"，跳过已抓取 {skipped} 篇" if skipped else "")
+                        )
+                        res = fetcher.fetch_items(new_candidates)
+                else:
+                    res = fetcher.fetch_with_retry()
+
                 records = stop_task_buffer()
                 return res, records
             except Exception as e:
