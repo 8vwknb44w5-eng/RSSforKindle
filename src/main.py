@@ -206,6 +206,10 @@ def main():
                             c for c in candidates
                             if not tracker.is_fetched(c["url"], c.get("title"))
                         ]
+                        # 限额截断：去重后取最多 limit 个新候选项
+                        limit = fetcher.get_limit()
+                        new_candidates = new_candidates[:limit]
+
                         skipped = len(candidates) - len(new_candidates)
                         logger.info(
                             f"[两阶段] {source.type} | {truncate_url(source.src, 40)}: "

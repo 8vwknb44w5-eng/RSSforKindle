@@ -126,7 +126,7 @@ class RaindropFetcher(BaseFetcher):
             )
 
             candidates = []
-            for item in raindrops[:self.global_limit]:
+            for item in raindrops:
                 candidates.append({
                     "url": item.get("link", ""),
                     "title": item.get("title", ""),

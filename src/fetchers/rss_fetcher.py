@@ -131,17 +131,12 @@ class RSSFetcher(BaseFetcher):
             # 保存 feed 级别的标题供 fetch_items 使用
             self._cached_source_title = feed.feed.get("title", "")
 
-            metadata = self.source.metadata or {}
-            limit = min(int(metadata.get("limit", self.global_limit)), len(feed.entries))
-            entries = feed.entries[:limit]
-
             self.logger.info(
-                f"[fetch_list] RSS feed 共 {len(feed.entries)} 条，"
-                f"限制取 {limit} 条"
+                f"[fetch_list] RSS feed 共 {len(feed.entries)} 条"
             )
 
             candidates = []
-            for entry in entries:
+            for entry in feed.entries:
                 url = entry.get("link", "")
                 title = entry.get("title", "No Title")
                 # 过滤掉明显应被删除的标题，减少后续不必要处理
