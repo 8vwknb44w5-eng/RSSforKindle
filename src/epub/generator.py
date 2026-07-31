@@ -307,6 +307,36 @@ class EPUBGenerator:
                         self.logger.error(f"Image download thread failed for {src}: {e}")
                         download_results[src] = None
 
+        # 2.5 体积/数量超限 → 自动严格压缩
+        try:
+            needs_strict = (self.image_processor.needs_strict_compression() is True)
+        except Exception as e:
+            self.logger.warning(f"Failed to check strict compression condition: {e}")
+            needs_strict = False
+
+        if needs_strict:
+            total_mb = self.image_processor.get_total_size_mb()
+            successful_count = sum(1 for r in download_results.values() if r)
+            self.logger.warning(
+                f"Images exceed threshold "
+                f"({total_mb:.2f} MB / {successful_count} images, "
+                f"limits: {self.image_processor.TRIGGER_TOTAL_MB} MB / "
+                f"{self.image_processor.TRIGGER_IMAGE_COUNT}). "
+                f"Applying strict recompression..."
+            )
+            strict_map = self.image_processor.recompress_all_strict()
+            # 用严格压缩后的字节更新 download_results
+            for src, result in list(download_results.items()):
+                if result is None:
+                    continue
+                filename, _old_data = result
+                if filename in strict_map:
+                    download_results[src] = (filename, strict_map[filename])
+            self.logger.info(
+                f"After strict recompression: "
+                f"{self.image_processor.get_total_size_mb():.2f} MB"
+            )
+
         # 3. 顺序更新每个章节的 HTML 并组装电子书
         self.logger.info("Updating image references sequentially and adding images to book...")
         for chapter, article, source in chapters_to_process:
@@ -1101,7 +1131,14 @@ pre code {
 
         self.logger.info(f"EPUB file size: {file_size_mb:.2f} MB")
 
+        if file_size_mb > 30:
+            self.logger.warning(
+                f"EPUB file size {file_size_mb:.2f} MB exceeds 30MB soft limit "
+                f"(Kindle email delivery may fail)."
+            )
         if file_size_mb > 50:
-            self.logger.warning("EPUB file exceeds 50MB limit!")
+            self.logger.error(
+                f"EPUB file size {file_size_mb:.2f} MB exceeds 50MB hard limit!"
+            )
 
         return output_path

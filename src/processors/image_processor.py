@@ -24,6 +24,17 @@ class ImageProcessor:
     MIN_WIDTH = 120  # 最小宽度（过滤头像、图标、表情等装饰性小图）
     MIN_HEIGHT = 120  # 最小高度
 
+    # --- 严格压缩模式（体积/数量超限时自动启用）---
+    STRICT_MAX_SIZE_KB = 180
+    STRICT_MAX_WIDTH = 800
+    STRICT_MAX_HEIGHT = 1200
+    STRICT_JPEG_QUALITY = 55
+
+    # 触发严格压缩的阈值
+    # 图片总大小超过该值（MB）或数量超过该值 → 自动严格压缩
+    TRIGGER_TOTAL_MB = 25.0
+    TRIGGER_IMAGE_COUNT = 150
+
     def __init__(self):
         """初始化图片处理器"""
         self.logger = get_logger()
@@ -167,42 +178,60 @@ class ImageProcessor:
             self.logger.error(f"Failed to process image: {e}")
             return None
 
-    def _resize_image(self, img: Image.Image) -> Image.Image:
+    def _resize_image(
+        self,
+        img: Image.Image,
+        max_width: int = None,
+        max_height: int = None,
+    ) -> Image.Image:
         """
         调整图片尺寸
 
         Args:
             img: PIL Image 对象
+            max_width: 最大宽度
+            max_height: 最大高度
 
         Returns:
             Image.Image: 调整后的图片
         """
+        max_width = max_width if max_width is not None else self.MAX_WIDTH
+        max_height = max_height if max_height is not None else self.MAX_HEIGHT
+
         width, height = img.size
 
         # 如果尺寸在限制内，不调整
-        if width <= self.MAX_WIDTH and height <= self.MAX_HEIGHT:
+        if width <= max_width and height <= max_height:
             return img
 
         # 计算缩放比例
-        ratio = min(self.MAX_WIDTH / width, self.MAX_HEIGHT / height)
+        ratio = min(max_width / width, max_height / height)
         new_size = (int(width * ratio), int(height * ratio))
 
         # 调整尺寸（使用高质量重采样）
         return img.resize(new_size, Image.Resampling.LANCZOS)
 
-    def _compress_image(self, img: Image.Image) -> bytes:
+    def _compress_image(
+        self,
+        img: Image.Image,
+        max_size_kb: int = None,
+        jpeg_quality: int = None,
+    ) -> bytes:
         """
         压缩图片
 
         Args:
             img: PIL Image 对象
+            max_size_kb: 最大大小（KB）
+            jpeg_quality: JPEG 质量
 
         Returns:
             bytes: 压缩后的图片数据
         """
-        # 逐步降低质量，直到满足大小要求
-        quality = self.JPEG_QUALITY
+        max_size_kb = max_size_kb if max_size_kb is not None else self.MAX_SIZE_KB
+        quality = jpeg_quality if jpeg_quality is not None else self.JPEG_QUALITY
 
+        # 逐步降低质量，直到满足大小要求
         while quality >= 20:
             buffer = io.BytesIO()
             img.save(buffer, format='JPEG', quality=quality, optimize=True)
@@ -210,7 +239,7 @@ class ImageProcessor:
 
             # 检查大小
             size_kb = len(data) / 1024
-            if size_kb <= self.MAX_SIZE_KB:
+            if size_kb <= max_size_kb:
                 return data
 
             # 降低质量
@@ -223,8 +252,66 @@ class ImageProcessor:
         img = img.resize(new_size, Image.Resampling.LANCZOS)
 
         buffer = io.BytesIO()
-        img.save(buffer, format='JPEG', quality=60, optimize=True)
+        # 维持在 25 左右画质，避免反弹回 40 导致体积再次超标
+        img.save(buffer, format='JPEG', quality=max(quality, 25), optimize=True)
         return buffer.getvalue()
+
+    def needs_strict_compression(self) -> bool:
+        """图片总大小或数量超限时返回 True"""
+        with self._lock:
+            count = len(self.processed_images)
+        total_mb = self.get_total_size_mb()
+        return (
+            total_mb > self.TRIGGER_TOTAL_MB
+            or count > self.TRIGGER_IMAGE_COUNT
+        )
+
+    def recompress_all_strict(self) -> dict:
+        """
+        用严格参数重新压缩所有已处理图片。
+        不重新下载，直接基于现有 JPEG 再压。
+
+        Returns:
+            dict: {filename: new_bytes}，便于调用方更新引用
+        """
+        mapping = {}
+        with self._lock:
+            new_list = []
+            for filename, data in self.processed_images:
+                try:
+                    img = Image.open(io.BytesIO(data))
+                    if img.mode != 'RGB':
+                        img = img.convert('RGB')
+
+                    img = self._resize_image(
+                        img,
+                        max_width=self.STRICT_MAX_WIDTH,
+                        max_height=self.STRICT_MAX_HEIGHT,
+                    )
+                    new_data = self._compress_image(
+                        img,
+                        max_size_kb=self.STRICT_MAX_SIZE_KB,
+                        jpeg_quality=self.STRICT_JPEG_QUALITY,
+                    )
+                    new_list.append((filename, new_data))
+                    mapping[filename] = new_data
+
+                    old_kb = len(data) / 1024
+                    new_kb = len(new_data) / 1024
+                    self.logger.info(
+                        f"Strict recompress {filename}: {old_kb:.1f}KB → {new_kb:.1f}KB"
+                    )
+                except Exception as e:
+                    self.logger.error(f"Strict recompress failed for {filename}: {e}")
+                    new_list.append((filename, data))  # 失败则保留原图
+                    mapping[filename] = data
+
+            self.processed_images = new_list
+
+        self.logger.info(
+            f"Strict recompression done. Total images size: {self.get_total_size_mb():.2f} MB"
+        )
+        return mapping
 
     def _generate_filename(self, url: str) -> str:
         """
