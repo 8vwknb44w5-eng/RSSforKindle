@@ -8,7 +8,8 @@ class TestRaindropFetcher:
 
     @patch.dict("os.environ", {"RAINDROPIO_API_KEY": "test_key_123"})
     @patch.object(RaindropFetcher, "_make_request")
-    def test_fetch_bookmarks(self, mock_request):
+    @patch.object(RaindropFetcher, "_fetch_full_text", return_value=("", ""))
+    def test_fetch_bookmarks(self, mock_fetch_full_text, mock_request):
         """测试书签抓取"""
         # 模拟 Raindrop API 响应
         mock_response = MagicMock()
@@ -64,11 +65,10 @@ class TestRaindropFetcher:
         # 模拟全文提取
         mock_fetch_full_text.return_value = ("<h1>Full Content</h1>", "raw html")
 
-        # 配置源 (设置全文)
+        # 配置源
         source = ContentSource(
             type="raindropio",
-            src="0",
-            full_text="Y"
+            src="0"
         )
 
         fetcher = RaindropFetcher(source)

@@ -81,6 +81,7 @@ class BaseFetcher(ABC):
     config_schema: dict = {}
     required_secrets: Dict[str, str] = {}
     custom_css: str = ""
+    supports_two_phase: bool = False  # 子类设为 True 表示支持两阶段抓取接口
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -118,6 +119,13 @@ class BaseFetcher(ABC):
         self.max_retries = max_retries
         self.logger = get_logger()
 
+    def get_limit(self) -> int:
+        """
+        获取当前源的抓取限制条目数（优先取 metadata.limit，其次取全局 global_limit）。
+        """
+        metadata = self.source.metadata or {}
+        return int(metadata.get("limit", self.global_limit))
+
     @abstractmethod
     def fetch(self) -> FetchResult:
         """
@@ -127,6 +135,38 @@ class BaseFetcher(ABC):
             FetchResult: 抓取结果
         """
         pass
+
+    def fetch_list(self) -> Optional[List[Dict[str, Any]]]:
+        """
+        【两阶段接口·阶段一】仅获取候选文章的轻量元数据列表，不抓取全文。
+
+        支持两阶段抓取的子类应重写此方法，返回候选条目列表，每个条目至少含：
+            - ``url``   (str)  文章链接（必填，用于去重查询）
+            - ``title`` (str)  文章标题（可选，辅助去重）
+        其余字段由各子类自行扩展。
+
+        Returns:
+            List[Dict[str, Any]] | None:
+                候选列表；若该 fetcher 不支持两阶段，返回 None 以触发回退逻辑。
+        """
+        return None
+
+    def fetch_items(self, candidates: List[Dict[str, Any]]) -> FetchResult:
+        """
+        【两阶段接口·阶段二】对去重过滤后的候选列表执行全文抓取，返回完整结果。
+
+        ``supports_two_phase = True`` 的子类必须实现此方法。
+
+        Args:
+            candidates: 经去重过滤后的候选条目列表（格式同 fetch_list 返回值）。
+
+        Returns:
+            FetchResult: 抓取结果。
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} 声明了 supports_two_phase=True，"
+            f"但未实现 fetch_items() 方法。"
+        )
 
     def fetch_with_retry(self) -> FetchResult:
         """

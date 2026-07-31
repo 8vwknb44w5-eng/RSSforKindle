@@ -40,7 +40,7 @@ def rss_full_text_source():
         title="Full Text RSS",
         priority=5,
         keep_link="Y",
-        full_text="Y",
+        metadata={"full_text": "Y"},
     )
 
 

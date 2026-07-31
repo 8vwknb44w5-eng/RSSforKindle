@@ -270,6 +270,7 @@ class TrendingFetcher(BaseFetcher):
                         "Your analysis style: Depth over breadth, data-supported arguments, avoid empty jargon or generalities, concise and impactful language."
                         f"Output language: {target_lang} only."
                         "\n\nOutput Specifications:\n"
+                        "- The very first line of your response must be the title of the analysis (can be plain text or markdown heading).\n"
                         "- Strictly use Markdown format with clear hierarchy (H2/H3/lists/bold)\n"
                         "- Each point must contain specific facts or data; avoid hollow descriptions\n"
                         "- If information is uncertain, clearly mark it as 'To be verified'\n"
@@ -306,18 +307,36 @@ class TrendingFetcher(BaseFetcher):
             content = data.get("choices", [{}])[0].get("message", {}).get("content")
             extracted_title = None
             if content:
-                # 检查第一行是否为 # 或 ## 开头
                 cleaned_content = self._remove_code_block_markers(content).strip()
                 lines = cleaned_content.splitlines()
-                if lines:
-                    first_line = lines[0].strip()
-                    # 匹配 # 或 ## 开头，排除 ### 或更长
-                    match = re.match(r'^#{1,2}(?![#])\s*(.+)$', first_line)
-                    if match:
-                        extracted_title = match.group(1).strip().rstrip('#').strip()
-                        # 从正文中去除第一行
-                        remaining_lines = lines[1:]
-                        cleaned_content = "\n".join(remaining_lines).strip()
+                
+                # 找到第一个非空行作为候选标题行
+                non_empty_indices = [i for i, line in enumerate(lines) if line.strip()]
+                
+                if non_empty_indices:
+                    first_non_empty_idx = non_empty_indices[0]
+                    first_line = lines[first_non_empty_idx].strip()
+                    
+                    # 提取首行作为标题（支持 Markdown 标题 #/##/###、加粗 **/** 或纯文本）
+                    raw_title = first_line
+                    # 1. 移除开头的 # 号及空格
+                    raw_title = re.sub(r'^#{1,6}\s*', '', raw_title)
+                    # 2. 移除结尾的 # 号
+                    raw_title = re.sub(r'\s*#+$', '', raw_title)
+                    # 3. 移除头尾的加粗/斜体标记 (*, _, ** __)
+                    raw_title = re.sub(r'^\*{1,2}|^\_{1,2}', '', raw_title)
+                    raw_title = re.sub(r'\*{1,2}$|\_{1,2}$', '', raw_title)
+                    extracted_title = raw_title.strip()
+                    
+                    if extracted_title and len(extracted_title) <= 200:
+                        # 从原 content 中移除该行
+                        lines.pop(first_non_empty_idx)
+                        cleaned_content = "\n".join(lines).strip()
+                    else:
+                        extracted_title = None
+                        self.logger.warning(f"Failed to extract title from first line: '{first_line}'. Content will be used as-is.")
+                else:
+                    self.logger.warning("AI returned empty content.")
                 
                 return self._format_as_html(cleaned_content), model, extracted_title
 

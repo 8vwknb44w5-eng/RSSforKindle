@@ -12,7 +12,7 @@
       "title": "Hacker News 热门",
       "priority": 15,
       "keep_link": "Y",
-      "full_text": "N",
+      "metadata": { "full_text": "N" },
       "exclude": [
         { "type": "start", "value": "Comments" }
       ],
@@ -24,7 +24,7 @@
       "title": "阮一峰的网络日志",
       "priority": 12,
       "keep_link": "Y",
-      "full_text": "N"
+      "metadata": { "full_text": "N" }
     },
     {
       "type": "rss",
@@ -32,7 +32,7 @@
       "title": "少数派",
       "priority": 10,
       "keep_link": "Y",
-      "full_text": "N",
+      "metadata": { "full_text": "N" },
       "exclude": [
         { "type": "exact", "value": "广告" }
       ]
@@ -43,7 +43,7 @@
       "title": "极客公园",
       "priority": 8,
       "keep_link": "Y",
-      "full_text": "N"
+      "metadata": { "full_text": "N" }
     },
     {
       "type": "rss",
@@ -51,7 +51,7 @@
       "title": "36氪",
       "priority": 6,
       "keep_link": "Y",
-      "full_text": "N",
+      "metadata": { "full_text": "N" },
       "delete": "广告,推广"
     },
     {

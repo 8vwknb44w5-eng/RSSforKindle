@@ -354,3 +354,51 @@ class TestDownloadAndProcess:
         
         processor.clear()
         assert len(processor.processed_images) == 0
+
+
+class TestStrictRecompression:
+    """严格压缩触发与再压缩测试"""
+
+    def setup_method(self):
+        self.processor = ImageProcessor()
+
+    def test_needs_strict_by_count(self):
+        # 模拟超过数量阈值
+        self.processor.processed_images = [
+            (f"image_{i}.jpg", b"x" * 1000) for i in range(151)
+        ]
+        assert self.processor.needs_strict_compression() is True
+
+    def test_needs_strict_by_size(self):
+        # 模拟超过 25MB
+        big = b"x" * (26 * 1024 * 1024)
+        self.processor.processed_images = [("image_big.jpg", big)]
+        assert self.processor.needs_strict_compression() is True
+
+    def test_no_strict_when_normal(self):
+        self.processor.processed_images = [
+            ("image_0.jpg", b"x" * 1000) for _ in range(5)
+        ]
+        assert self.processor.needs_strict_compression() is False
+
+    def test_recompress_all_strict_reduces_size(self):
+        # 造一张较大的图，先按普通模式压，再严格再压，体积应下降或持平
+        img = Image.new("RGB", (1200, 1800), (128, 64, 32))
+        # 填一些噪声让 JPEG 不易压得很小
+        import random
+        pixels = img.load()
+        for x in range(0, 1200, 3):
+            for y in range(0, 1800, 3):
+                pixels[x, y] = (
+                    random.randint(0, 255),
+                    random.randint(0, 255),
+                    random.randint(0, 255),
+                )
+        normal_data = self.processor._compress_image(img)
+        self.processor.processed_images = [("image_test.jpg", normal_data)]
+        before = len(normal_data)
+
+        mapping = self.processor.recompress_all_strict()
+        after = len(mapping["image_test.jpg"])
+        assert after <= before
+        assert mapping["image_test.jpg"][:3] == b"\xff\xd8\xff"

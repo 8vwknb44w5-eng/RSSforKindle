@@ -17,13 +17,14 @@ class RSSFetcher(BaseFetcher):
     """RSS 抓取器"""
 
     type_name = "rss"
+    supports_two_phase = True
     src_placeholder = "RSS/Atom URL, 例如: https://hnrss.org/frontpage"
     config_schema = {
-        "full_text": {
+        "metadata.full_text": {
             "type": "select",
             "label": "全文提取",
             "options": ["", "N", "Y"],
-            "hint": "仅 RSS 有效"
+            "hint": "抓取 RSS 页面正文"
         },
         "metadata.limit": {
             "type": "number",
@@ -100,6 +101,92 @@ class RSSFetcher(BaseFetcher):
             result.error = str(e)
             return result
 
+    # ------------------------------------------------------------------
+    # 两阶段接口实现
+    # ------------------------------------------------------------------
+
+    def fetch_list(self) -> Optional[List[dict]]:
+        """
+        【阶段一】解析 RSS feed，仅返回候选条目元数据列表（不抓全文）。
+
+        Returns:
+            list of dict with keys: url, title, author, published, _entry
+            解析失败时返回 None 以触发回退逻辑。
+        """
+        try:
+            feed = feedparser.parse(self.source.src)
+
+            if feed.bozo:
+                self.logger.warning(
+                    f"RSS feed has format issues (bozo): {feed.bozo_exception}"
+                )
+
+            if not feed.entries:
+                self.logger.error(
+                    f"Failed to parse RSS feed or no entries: "
+                    f"{feed.bozo_exception if feed.bozo else 'No entries found'}"
+                )
+                return None
+
+            # 保存 feed 级别的标题供 fetch_items 使用
+            self._cached_source_title = feed.feed.get("title", "")
+
+            self.logger.info(
+                f"[fetch_list] RSS feed 共 {len(feed.entries)} 条"
+            )
+
+            candidates = []
+            for entry in feed.entries:
+                url = entry.get("link", "")
+                title = entry.get("title", "No Title")
+                # 过滤掉明显应被删除的标题，减少后续不必要处理
+                if self._should_delete(title):
+                    continue
+                candidates.append({
+                    "url": url,
+                    "title": title,
+                    "author": entry.get("author", ""),
+                    "published": entry.get("published", ""),
+                    "_entry": entry,  # 保留原始 entry，供 fetch_items 使用摘要
+                })
+
+            return candidates
+
+        except Exception as e:
+            self.logger.error(f"[fetch_list] RSS fetch_list failed: {e}")
+            return None
+
+    def fetch_items(self, candidates: List[dict]) -> "FetchResult":
+        """
+        【阶段二】对去重过滤后的候选条目执行全文/摘要抓取，返回 FetchResult。
+
+        Args:
+            candidates: fetch_list() 返回并经去重过滤的条目列表。
+        """
+        result = FetchResult(source=self.source, articles=[])
+        result.source_title = getattr(self, "_cached_source_title", "")
+
+        if not candidates:
+            self.logger.info("[fetch_items] 无新候选条目，跳过全文抓取")
+            return result
+
+        self.logger.info(f"[fetch_items] 开始抓取 {len(candidates)} 篇新文章")
+
+        for cand in candidates:
+            try:
+                entry = cand.get("_entry", {})
+                article = self._parse_entry(entry)
+                if article:
+                    result.articles.append(article)
+            except Exception as e:
+                self.logger.error(f"[fetch_items] 解析条目失败: {e}")
+                result.add_error(f"Failed to parse entry: {e}")
+
+        if result.articles:
+            result.success = True
+
+        return result
+
     def _parse_entry(self, entry: dict) -> Optional[Article]:
         """
         解析单个 RSS 条目
@@ -117,7 +204,9 @@ class RSSFetcher(BaseFetcher):
         published = format_date(entry.get("published", ""))
 
         # 提取内容
-        if self.source.full_text == "Y":
+        metadata = self.source.metadata or {}
+        full_text = metadata.get("full_text") or self.source.full_text
+        if full_text == "Y":
             # 抓取完整正文（使用 trafilatura）
             content, raw_html = self._fetch_full_text(link)
             # 从原始 HTML 提取图片 URL（trafilatura 通常会剥离 <img>）

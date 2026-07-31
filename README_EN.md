@@ -236,7 +236,7 @@ For detailed documentation, refer to [docs/CONFIG.md](docs/CONFIG.md).
       "title": "Hacker News",
       "priority": 10,
       "keep_link": "Y",
-      "full_text": "N"
+      "metadata": { "full_text": "N" }
     }
   ]
 }

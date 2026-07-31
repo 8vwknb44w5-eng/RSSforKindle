@@ -943,18 +943,7 @@
   },
   "raindropio": {
     "src_placeholder": "Enter Raindropio collection ID (e.g., 1234567, or 0 for Unsorted)",
-    "schema": {
-      "full_text": {
-        "type": "select",
-        "label": "全文提取",
-        "options": [
-          "",
-          "N",
-          "Y"
-        ],
-        "hint": "Raindropio 有效"
-      }
-    },
+    "schema": {},
     "required_secrets": {
       "RAINDROPIO_API_KEY": "Raindrop.io 的 API 访问密钥。"
     }
@@ -962,7 +951,7 @@
   "rss": {
     "src_placeholder": "RSS/Atom URL, 例如: https://hnrss.org/frontpage",
     "schema": {
-      "full_text": {
+      "metadata.full_text": {
         "type": "select",
         "label": "全文提取",
         "options": [
@@ -970,7 +959,7 @@
           "N",
           "Y"
         ],
-        "hint": "仅 RSS 有效"
+        "hint": "抓取 RSS 页面正文"
       },
       "metadata.limit": {
         "type": "number",

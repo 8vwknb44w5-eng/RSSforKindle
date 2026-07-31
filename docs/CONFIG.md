@@ -96,7 +96,14 @@
 | 专属字段 | 类型 | 必填 | 说明 |
 |---------|------|------|------|
 | `src` | string | ✓ | RSS/Atom feed 的完整 URL |
-| `full_text` | string | | 是否抓取完整正文。`"N"`（默认）→ 使用 feed 提供的摘要；`"Y"` → 访问原始 URL，用 trafilatura 提取全文，失败时回退到 BeautifulSoup 提取 `<article>`/`<main>` 等区域 |
+| `metadata` | object | | RSS 可选扩展配置 |
+
+##### `rss` 支持的 `metadata` 字段
+
+| metadata 键 | 类型 | 说明 |
+|------------|------|------|
+| `full_text` | string | 是否抓取完整正文。`"N"`（默认）→ 使用 feed 提供的摘要；`"Y"` → 访问原始 URL，用 trafilatura 提取全文，失败时回退到 BeautifulSoup 提取 `<article>`/`<main>` 等区域 |
+| `limit` | number | 限制抓取最大条目数，未设置时遵循全局 limit |
 
 ```json
 {
@@ -105,7 +112,9 @@
   "src": "https://hnrss.org/frontpage",
   "priority": 10,
   "keep_link": "Y",
-  "full_text": "Y",
+  "metadata": {
+    "full_text": "Y"
+  },
   "exclude": [
     { "type": "start", "value": "阅读更多" },
     { "type": "end", "value": "— 完 —" }
@@ -204,7 +213,8 @@
 | 专属字段 | 类型 | 必填 | 说明 |
 |---------|------|------|------|
 | `src` | string | ✓ | Raindrop.io 的收藏夹 ID（集合 ID），例如 `"1234567"`，或者 `"0"` 代表未分类收藏（Unsorted） |
-| `full_text` | string | | 是否抓取完整正文。`"N"`（默认）→ 使用 Raindrop 提供的摘要/摘录；`"Y"` → 访问原始书签 URL，用 trafilatura 提取全文，失败时回退到 BeautifulSoup 提取 |
+
+> **注**：`raindropio` 会自动抓取书签指向网页的全文正文，无需额外配置。
 
 ```json
 {
@@ -212,8 +222,7 @@
   "title": "稍后阅读收藏",
   "src": "1234567",
   "priority": 12,
-  "keep_link": "Y",
-  "full_text": "Y"
+  "keep_link": "Y"
 }
 ```
 
@@ -280,8 +289,7 @@
       "src": "1234567",
       "title": "稍后阅读选编",
       "priority": 12,
-      "keep_link": "Y",
-      "full_text": "Y"
+      "keep_link": "Y"
     },
     {
       "type": "rss",
@@ -289,7 +297,9 @@
       "title": "Hacker News 首页",
       "priority": 10,
       "keep_link": "Y",
-      "full_text": "Y",
+      "metadata": {
+        "full_text": "Y"
+      },
       "exclude": [
         { "type": "start", "value": "阅读更多" },
         { "type": "end", "value": "— 完 —" },

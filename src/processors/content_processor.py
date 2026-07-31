@@ -407,6 +407,31 @@ class ContentProcessor:
         Returns:
             str: 清洗后的 HTML 片段
         """
+        # === 全局预处理：将单行 <pre> 转换为行内 <code> ===
+        # 问题根源：trafilatura 在提取 HTML 时，会把原始文章中的行内 <code> 标签
+        # 转换为 <pre> 标签（例如 sspai 等平台）。这些被错误转换的 <pre> 内容均为
+        # 单行文本（无换行符），在 EPUB 中会以代码块形式渲染，造成排版破碎。
+        # 解决方案：在所有其他处理之前，全局扫描内容不含换行符的 <pre> 标签，
+        # 将其转换回行内 <code>（若 <pre> 内已有 <code> 子标签，则仅 unwrap <pre>）。
+        # 真正的多行代码块（包含 \n）保留为 <pre>，不受影响。
+        def _convert_singleline_pre_to_code(m: re.Match) -> str:
+            inner = m.group(1)
+            # 含换行符 → 保留为块级代码块
+            if '\n' in inner or '\r' in inner or '<br' in inner.lower():
+                return m.group(0)
+            # <pre><code...>...</code></pre> → 直接 unwrap pre
+            if re.match(r'^\s*<code\b', inner, re.IGNORECASE):
+                return inner.strip()
+            # <pre>单行内容</pre> → <code>内容</code>
+            return f'<code>{inner}</code>'
+
+        html = re.sub(
+            r'<pre\b[^>]*>(.*?)</pre>',
+            _convert_singleline_pre_to_code,
+            html,
+            flags=re.DOTALL | re.IGNORECASE
+        )
+
         # === 预处理：转换不合法嵌套在段落/行内元素中的 <pre> 标签 ===
         # 标准 HTML 解释器（如 lxml）会在遇到嵌套在 <p> 内的 <pre> 时，自动闭合先前未闭合的 <p> 标签。
         # 从而将 <p>xxx<pre>code</pre>yyy</p> 树结构破坏为：<p>xxx</p><pre>code</pre>yyy
