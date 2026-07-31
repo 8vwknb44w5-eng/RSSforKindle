@@ -19,11 +19,11 @@ class RSSFetcher(BaseFetcher):
     type_name = "rss"
     src_placeholder = "RSS/Atom URL, 例如: https://hnrss.org/frontpage"
     config_schema = {
-        "full_text": {
+        "metadata.full_text": {
             "type": "select",
             "label": "全文提取",
             "options": ["", "N", "Y"],
-            "hint": "仅 RSS 有效"
+            "hint": "抓取 RSS 页面正文"
         },
         "metadata.limit": {
             "type": "number",
@@ -117,7 +117,9 @@ class RSSFetcher(BaseFetcher):
         published = format_date(entry.get("published", ""))
 
         # 提取内容
-        if self.source.full_text == "Y":
+        metadata = self.source.metadata or {}
+        full_text = metadata.get("full_text") or self.source.full_text
+        if full_text == "Y":
             # 抓取完整正文（使用 trafilatura）
             content, raw_html = self._fetch_full_text(link)
             # 从原始 HTML 提取图片 URL（trafilatura 通常会剥离 <img>）

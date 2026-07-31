@@ -19,7 +19,7 @@ This guide provides compact developer instructions, architecture decisions, and 
 - **Timezone**: All timestamping and datetime calculations must use Beijing Time (UTC+8) via `src/utils/helpers.py:get_now()`.
 - **Fetchers (`src/fetchers/`)**:
   - `MailFetcher`: Uses testmail.app API. `src` supports `"namespace"` or `"namespace.tag"` (dot-split). `metadata` enables tags, limits, and date range filters.
-  - `RSSFetcher`: feedparser. Supports `full_text=Y/N` for full article retrieval via trafilatura.
+  - `RSSFetcher`: feedparser. Supports `metadata.full_text=Y/N` for full article retrieval via trafilatura.
   - `WebFetcher`: Trafilatura with BeautifulSoup fallback.
   - `TrendingFetcher`: LLM generation via OpenRouter API.
   - **Plugin Architecture Mandate (插件化规范)**:
@@ -60,7 +60,7 @@ Optional variables: `CONFIG_JSON` (overrides file), `TESTMAIL_APP_API_KEY`, `OPE
       "priority": 10, // Higher priority items appear earlier in book (stable sorted)
       "load_images": "Y|N", // Per-source image toggle
       "keep_link": "Y|N",
-      "full_text": "Y|N", // RSS, RaindropIO only
+      "metadata": {} // Fetcher-specific options (e.g. metadata.full_text for RSS)
       "exclude": [{"type": "start|end|exact", "value": "keyword"}],
       "delete": "keyword1,keyword2",
       "metadata": {} // Fetcher-specific options

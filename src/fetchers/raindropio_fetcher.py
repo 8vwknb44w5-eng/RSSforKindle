@@ -12,14 +12,7 @@ class RaindropFetcher(BaseFetcher):
     
     type_name = "raindropio"
     src_placeholder = "Enter Raindropio collection ID (e.g., 1234567, or 0 for Unsorted)"
-    config_schema = {
-        "full_text": {
-            "type": "select",
-            "label": "全文提取",
-            "options": ["", "N", "Y"],
-            "hint": "Raindropio 有效"
-        }
-    }
+    config_schema = {}
     required_secrets = {
         "RAINDROPIO_API_KEY": "Raindrop.io 的 API 访问密钥。"
     }
@@ -68,9 +61,9 @@ class RaindropFetcher(BaseFetcher):
                 url = item.get("link")
                 excerpt = item.get("excerpt", "")
                 
-                # Check for full text if requested
+                # Always attempt full text extraction
                 content = None
-                if self.source.full_text == "Y":
+                if url:
                     content, _ = self._fetch_full_text(url)
                 
                 if not content:
