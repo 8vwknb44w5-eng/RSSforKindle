@@ -28,7 +28,7 @@
 | `src` | String / URL | **必填**。对应内容源的链接、RSS 地址、邮箱、或是 Trending 的抓取目标/描述。 |
 | `priority` | Integer | 优先级。数字越大优先级越高（用于最终排版）。 |
 | `keep_link` | `Y` / `N` | 是否保留原文中的超链接。 |
-| `full_text` | `Y` / `N` | （仅针对 RSS 有效）`Y`=抓取源网页正文；`N`=仅使用 RSS 摘要。 |
+| `metadata.full_text` | `Y` / `N` | （仅针对 RSS 有效，位于 `metadata` 内部）`Y`=抓取源网页正文；`N`=仅使用 RSS 摘要。 |
 | `chop` | String (Regex) | 支持 Python 的基础切片指令（/[数字:数字]），截取并从正文中**删除**。 |
 | `exclude` | String | 删除指定**开头**或**结尾**的无用内容块。 |
 | `delete` | String | 当标题包含关键词不抓取 |
@@ -44,8 +44,8 @@
     *   进行清洗，转换为统一的排版格式。
     *   请访问doc连接：https://testmail.app/docs/#using-cypress-json-api
 2.  **RSS (订阅):**
-    *   如果 `full_text = N`：直接抓取 RSS feed 中的 description/内容。
-    *   如果 `full_text = Y`：提取链接，请求目标网页，抓取网页正文。
+    *   如果 `metadata.full_text = N`：直接抓取 RSS feed 中的 description/内容。
+    *   如果 `metadata.full_text = Y`：提取链接，请求目标网页，抓取网页正文。
 3.  **Web (网页):**
     *   通过类似于 trafilatura 的工具提取正文并降噪。
 4.  **Trending (热点分析):**
