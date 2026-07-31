@@ -222,9 +222,7 @@ class XPathListAutoFetcher(BaseFetcher):
 
             self.logger.info(f"[阶段一] 共发现 {len(unique_links)} 个候选链接")
 
-            # 按全局限额截断
-            target_links = unique_links[:self.global_limit]
-            return [{"url": url} for url in target_links]
+            return [{"url": url} for url in unique_links]
 
         except Exception as e:
             self.logger.error(f"[阶段一] fetch_list 失败: {e}")

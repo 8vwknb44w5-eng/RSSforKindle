@@ -119,6 +119,13 @@ class BaseFetcher(ABC):
         self.max_retries = max_retries
         self.logger = get_logger()
 
+    def get_limit(self) -> int:
+        """
+        获取当前源的抓取限制条目数（优先取 metadata.limit，其次取全局 global_limit）。
+        """
+        metadata = self.source.metadata or {}
+        return int(metadata.get("limit", self.global_limit))
+
     @abstractmethod
     def fetch(self) -> FetchResult:
         """
